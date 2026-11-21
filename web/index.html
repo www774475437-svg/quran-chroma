@@ -651,7 +651,10 @@ async function fetchWithRetry(url, type, tries=3){
 
 /* ---------------- الصوت ---------------- */
 let actx = null;
+/* آيفون: اطلب جلسة تشغيل حتى لا يكتم الصوت زر الصامت */
+function setPlaybackSession(){ try{ if (navigator.audioSession) navigator.audioSession.type = "playback"; }catch(e){} }
 function getCtx(){
+  setPlaybackSession();
   if (!actx){ const C = window.AudioContext||window.webkitAudioContext; actx = new C(); }
   if (actx.state==="suspended") actx.resume().catch(()=>{});
   return actx;
