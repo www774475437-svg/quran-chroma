@@ -191,6 +191,11 @@ footer a{color:var(--copper)}
 .sheetBody .v.sel{background:rgba(179,139,63,.3)}
 .sheetBody .v.edge{background:rgba(179,139,63,.55)}
 .sheetFoot{display:flex;gap:10px;align-items:center;padding:10px 14px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--panel)}
+.tlWrap{border:1px solid var(--line);border-radius:20px;overflow:hidden;background:#0c0b09}
+#tlCanvas{display:block;width:100%;height:170px;touch-action:none;cursor:grab}
+.tlBar{display:flex;align-items:center;gap:6px;margin-top:10px}
+.tlBar .btn.small{padding:10px 12px;white-space:nowrap}
+.tlTime{flex:1;text-align:center;white-space:nowrap;min-width:0;font-variant-numeric:tabular-nums;color:var(--muted);direction:ltr;font-size:14px}
 /* شريط الأقسام العائم */
 nav.tabs{left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));padding:6px;border:1px solid var(--line);border-radius:999px;background:rgba(36,33,29,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 14px 34px -10px rgba(0,0,0,.85)}
 nav.tabs button{border-radius:999px;padding:9px 2px 8px;font-size:12px;font-weight:700}
@@ -275,7 +280,27 @@ nav.tabs button.on{color:var(--copper);background:rgba(0,0,0,.32)}
         <button class="btn primary" id="autoSplitBtn" disabled>✨ تقسيم الآيات تلقائياً</button>
         <button class="btn" id="tapSyncBtn" disabled>👆 ضبط يدوي بالنقر مع التلاوة</button>
         <div class="hint">التقسيم التلقائي يعتمد على وقفات القارئ بين الآيات. إذا لم يكن دقيقاً، استعمل الضبط اليدوي أو عدّل الأوقات بالأسفل.</div>
+        <div id="tlBox" style="display:none">
+          <label class="f">محرّر الصوت — اسحب الخطوط الذهبية لتحديد بداية كل آية ونهايتها</label>
+          <div class="tlWrap"><canvas id="tlCanvas"></canvas></div>
+          <div class="tlBar">
+            <button class="btn small primary" id="tlPlay">▶ تشغيل</button>
+            <span class="tlTime" id="tlTime">0:00.0</span>
+            <button class="btn small" id="tlOut" aria-label="تصغير">➖</button>
+            <button class="btn small" id="tlIn" aria-label="تكبير">➕</button>
+            <button class="btn small" id="tlAll">الكل</button>
+          </div>
+          <div class="tlBar" id="tlSelBar" style="display:none">
+            <span class="hint" id="tlSelInfo" style="margin:0;flex:1"></span>
+            <button class="btn small" id="tlMinus">◀ ٠٫٠٥</button>
+            <button class="btn small" id="tlHere">عند المؤشر</button>
+            <button class="btn small" id="tlPlus">٠٫٠٥ ▶</button>
+          </div>
+          <div class="hint">اضغط على أي مكان في الموجة لتحريك المؤشر. اسحب الموجة يميناً ويساراً للتنقل، وكبّرها بإصبعين. أول خط وآخر خط يحددان بداية المقطع ونهايته.</div>
+        </div>
+        <details style="margin-top:8px"><summary class="hint" style="cursor:pointer">⌨️ تعديل الأوقات بالأرقام</summary>
         <div class="segList" id="segList"></div>
+        </details>
       </div>
     </div>
   </div>
@@ -1099,6 +1124,7 @@ function renderStill(){
 }
 async function togglePlay(){
   if (playing){ stopPreview(); return; }
+  if (typeof tlStop==="function" && TL.src) tlStop();
   if (exporting) return;
   const ctx = getCtx();
   $("playBtn").disabled = true;
@@ -1313,7 +1339,9 @@ $("audioFile").addEventListener("change", async e=>{
     segments = [];
     $("fileInfo").textContent = "✓ "+f.name+" — المدة "+fmt(uploadBuf.duration);
     $("autoSplitBtn").disabled = false; $("tapSyncBtn").disabled = false;
+    tlLoad();
     renderSegList(); invalidate();
+    setTimeout(()=>{ if (uploadBuf && !segments.length) $("autoSplitBtn").click(); }, 50);
     setStatus("تم استخراج الصوت ✓ الآن اضغط «تقسيم الآيات تلقائياً»", "ok");
   }catch(err){
     uploadBuf = null;
@@ -1418,6 +1446,7 @@ $("autoSplitBtn").addEventListener("click", async ()=>{
 });
 function renderSegList(){
   const box = $("segList"); box.innerHTML = "";
+  tlRefresh();
   if (!segments.length) return;
   segments.forEach((s,i)=>{
     const row = document.createElement("div"); row.className="segRow";
@@ -1442,6 +1471,129 @@ function playSnippet(a,b){
   snippetSrc.start(0, a, Math.max(0.1,b-a));
 }
 
+/* ---------------- محرّر الخط الزمني (مثل برامج المونتاج) ---------------- */
+const TL = {peaks:null, pps:100, v0:0, v1:10, head:0, sel:-1, src:null, t0:0, from:0, raf:0};
+const tlc = $("tlCanvas"), tlx = tlc.getContext("2d");
+function tlLoad(){
+  const b = uploadBuf; if (!b) return;
+  const step = Math.max(1, Math.floor(b.sampleRate/TL.pps)), n = Math.floor(b.length/step), ch = b.getChannelData(0);
+  const pk = new Float32Array(n); let mx = 0.001;
+  for (let i=0;i<n;i++){ let m=0; const o=i*step; for (let j=0;j<step;j+=3){ const v=Math.abs(ch[o+j]); if (v>m) m=v; } pk[i]=m; if (m>mx) mx=m; }
+  for (let i=0;i<n;i++) pk[i] /= mx;
+  TL.peaks = pk; TL.pps = b.sampleRate/step; TL.v0 = 0; TL.v1 = b.duration; TL.head = 0; TL.sel = -1;
+  tlStop(); $("tlBox").style.display = "";
+}
+function tlBounds(){ return segments.length ? [segments[0].start].concat(segments.map(s=>s.end)) : []; }
+function tlSetBound(i, t){
+  const b = tlBounds(); if (i<0 || i>=b.length) return;
+  const lo = i>0 ? b[i-1]+0.1 : 0, hi = i<b.length-1 ? b[i+1]-0.1 : uploadBuf.duration;
+  t = +clamp(t, lo, hi).toFixed(2);
+  if (i < segments.length) segments[i].start = t;
+  if (i > 0) segments[i-1].end = t;
+}
+function tlBoundName(i){ const n = segments.length; return i===0 ? "بداية المقطع" : i===n ? "نهاية المقطع" : "بداية "+segments[i].label; }
+const tlX = t => (t-TL.v0)/(TL.v1-TL.v0)*tlc.clientWidth;
+const tlT = x => TL.v0 + x/tlc.clientWidth*(TL.v1-TL.v0);
+function tlFmt(t){ const m=Math.floor(t/60), s=(t%60); return m+":"+(s<10?"0":"")+s.toFixed(1); }
+function tlDraw(){
+  if (!uploadBuf || !TL.peaks || !tlc.clientWidth) return;
+  const dpr = Math.min(2, window.devicePixelRatio||1), W = tlc.clientWidth, H = tlc.clientHeight;
+  if (tlc.width !== Math.round(W*dpr) || tlc.height !== Math.round(H*dpr)){ tlc.width = Math.round(W*dpr); tlc.height = Math.round(H*dpr); }
+  const c = tlx; c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,W,H);
+  c.fillStyle = "#0c0b09"; c.fillRect(0,0,W,H);
+  const top = 26, bot = H-26, mid = (top+bot)/2, amp = (bot-top)/2;
+  // مناطق الآيات
+  c.textAlign = "center"; c.textBaseline = "middle"; c.direction = "rtl";
+  segments.forEach((sg,i)=>{
+    const x0 = tlX(sg.start), x1 = tlX(sg.end); if (x1<0 || x0>W) return;
+    c.fillStyle = i%2 ? "rgba(179,139,63,.13)" : "rgba(179,139,63,.24)"; c.fillRect(x0, top, x1-x0, bot-top);
+    if (x1-x0 > 34){ c.fillStyle = "#f2eadd"; c.font = "700 12px Tajawal, sans-serif"; c.fillText(sg.label, clamp((x0+x1)/2, 24, W-24), 13); }
+  });
+  // الموجة
+  const spp = (TL.v1-TL.v0)/W*TL.pps; c.fillStyle = "#a79c88";
+  for (let x=0; x<W; x+=2){
+    const a = Math.floor((TL.v0*TL.pps) + x*spp), b = Math.max(a+1, Math.floor((TL.v0*TL.pps) + (x+2)*spp));
+    let m = 0; for (let k=a; k<b && k<TL.peaks.length; k += Math.max(1, Math.floor((b-a)/24))) if (k>=0 && TL.peaks[k]>m) m = TL.peaks[k];
+    const h = Math.max(1, m*amp); c.fillRect(x, mid-h, 1.4, h*2);
+  }
+  // خارج المقطع
+  const bnd = tlBounds();
+  if (bnd.length){ c.fillStyle = "rgba(0,0,0,.55)"; const xa = tlX(bnd[0]), xb = tlX(bnd[bnd.length-1]); if (xa>0) c.fillRect(0,top,xa,bot-top); if (xb<W) c.fillRect(xb,top,W-xb,bot-top); }
+  // الحدود
+  bnd.forEach((t,i)=>{ const x = tlX(t); if (x<-12 || x>W+12) return; const on = i===TL.sel;
+    c.fillStyle = on ? "#f0a868" : "#d2a64c"; c.fillRect(x-(on?1.5:1), top, on?3:2, bot-top);
+    c.beginPath(); c.arc(x, bot+11, on?10:8, 0, Math.PI*2); c.fill();
+    c.fillStyle = "#12110e"; c.fillRect(x-3, bot+7, 1.6, 8); c.fillRect(x+1.4, bot+7, 1.6, 8); });
+  // المؤشر
+  const hx = tlX(TL.head);
+  if (hx>=-2 && hx<=W+2){ c.fillStyle = "#fff"; c.fillRect(hx-1, top-6, 2, bot-top+6); c.beginPath(); c.moveTo(hx-6, top-8); c.lineTo(hx+6, top-8); c.lineTo(hx, top+1); c.fill(); }
+  $("tlTime").textContent = tlFmt(TL.head);
+  const sb = $("tlSelBar");
+  if (TL.sel>=0 && TL.sel<bnd.length){ sb.style.display = ""; $("tlSelInfo").textContent = tlBoundName(TL.sel)+" — "+bnd[TL.sel].toFixed(2)+" ث"; } else sb.style.display = "none";
+}
+function tlRefresh(){ if (!uploadBuf){ $("tlBox").style.display="none"; return; } if (TL.sel > segments.length) TL.sel = -1; requestAnimationFrame(tlDraw); }
+function tlView(v0, v1){
+  const d = uploadBuf.duration; let span = clamp(v1-v0, Math.min(d, 1.5), d);
+  v0 = clamp(v0, 0, d-span); TL.v0 = v0; TL.v1 = v0+span; tlDraw();
+}
+function tlZoom(f, ct){ const span = (TL.v1-TL.v0)*f; const r = (ct-TL.v0)/(TL.v1-TL.v0); tlView(ct - span*r, ct + span*(1-r)); }
+function tlCommit(){ renderSegList(); invalidate(); }
+function tlStop(){
+  if (TL.src){ try{ TL.src.onended=null; TL.src.stop(); }catch(e){} TL.src = null; }
+  cancelAnimationFrame(TL.raf); $("tlPlay").textContent = "▶ تشغيل";
+}
+function tlPlayFrom(t){
+  tlStop(); if (playing) stopPreview();
+  const ctx = getCtx(); if (t >= uploadBuf.duration-0.05) t = 0;
+  const src = ctx.createBufferSource(); src.buffer = uploadBuf; src.connect(ctx.destination);
+  TL.t0 = ctx.currentTime + 0.05; TL.from = t; src.start(TL.t0, t); TL.src = src;
+  src.onended = ()=>{ if (TL.src===src){ tlStop(); tlDraw(); } };
+  $("tlPlay").textContent = "❚❚ إيقاف";
+  const loop = ()=>{ if (TL.src!==src) return;
+    TL.head = clamp(TL.from + (ctx.currentTime-TL.t0), 0, uploadBuf.duration);
+    if (TL.head > TL.v1 - (TL.v1-TL.v0)*0.08 && TL.v1 < uploadBuf.duration-0.01){ const sp = TL.v1-TL.v0; tlView(TL.head - sp*0.1, TL.head + sp*0.9); } else tlDraw();
+    TL.raf = requestAnimationFrame(loop); };
+  loop();
+}
+$("tlPlay").addEventListener("click", ()=>{ if (TL.src){ tlStop(); tlDraw(); } else tlPlayFrom(TL.head); });
+$("tlIn").addEventListener("click", ()=> tlZoom(0.5, clamp(TL.head, TL.v0, TL.v1)));
+$("tlOut").addEventListener("click", ()=> tlZoom(2, (TL.v0+TL.v1)/2));
+$("tlAll").addEventListener("click", ()=> tlView(0, uploadBuf.duration));
+$("tlMinus").addEventListener("click", ()=>{ const b=tlBounds(); if (TL.sel>=0){ tlSetBound(TL.sel, b[TL.sel]-0.05); tlCommit(); } });
+$("tlPlus").addEventListener("click", ()=>{ const b=tlBounds(); if (TL.sel>=0){ tlSetBound(TL.sel, b[TL.sel]+0.05); tlCommit(); } });
+$("tlHere").addEventListener("click", ()=>{ if (TL.sel>=0){ tlSetBound(TL.sel, TL.head); tlCommit(); } });
+(function(){
+  const pts = new Map(); let mode = "", moved = 0, pinch0 = 0, span0 = 0, ctr0 = 0, lastX = 0;
+  const px = e => e.clientX - tlc.getBoundingClientRect().left;
+  tlc.addEventListener("pointerdown", e=>{
+    if (!uploadBuf) return; try{ tlc.setPointerCapture(e.pointerId); }catch(_){}
+    pts.set(e.pointerId, px(e)); moved = 0; lastX = px(e);
+    if (pts.size === 2){ const [a,b] = [...pts.values()]; mode = "pinch"; pinch0 = Math.abs(a-b)||1; span0 = TL.v1-TL.v0; ctr0 = tlT((a+b)/2); return; }
+    const bnd = tlBounds(); let best = -1, bd = 22;
+    bnd.forEach((t,i)=>{ const d = Math.abs(tlX(t)-lastX); if (d < bd){ bd = d; best = i; } });
+    if (best >= 0){ mode = "handle"; TL.sel = best; tlc.style.cursor = "ew-resize"; } else { mode = "pan"; tlc.style.cursor = "grabbing"; }
+    tlDraw();
+  });
+  tlc.addEventListener("pointermove", e=>{
+    if (!pts.has(e.pointerId)) return; const x = px(e); pts.set(e.pointerId, x);
+    if (mode === "pinch" && pts.size === 2){ const [a,b] = [...pts.values()]; const sp = span0 * pinch0/(Math.abs(a-b)||1); tlView(ctr0 - sp/2, ctr0 + sp/2); return; }
+    const dx = x - lastX; moved += Math.abs(dx); lastX = x;
+    if (mode === "handle"){ tlSetBound(TL.sel, tlT(x)); tlDraw(); }
+    else if (mode === "pan" && moved > 6){ const dt = dx/tlc.clientWidth*(TL.v1-TL.v0); tlView(TL.v0-dt, TL.v1-dt); }
+  });
+  const up = e=>{
+    if (!pts.has(e.pointerId)) return; pts.delete(e.pointerId); tlc.style.cursor = "grab";
+    if (mode === "handle"){ if (moved > 0) tlCommit(); else tlDraw(); }
+    else if (mode === "pan" && moved <= 6){ TL.head = clamp(tlT(lastX), 0, uploadBuf.duration); TL.sel = -1; if (TL.src) tlPlayFrom(TL.head); else tlDraw(); }
+    if (pts.size === 0) mode = "";
+  };
+  tlc.addEventListener("pointerup", up); tlc.addEventListener("pointercancel", up);
+  tlc.addEventListener("wheel", e=>{ if (!uploadBuf) return; e.preventDefault();
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)){ const dt = e.deltaX/tlc.clientWidth*(TL.v1-TL.v0); tlView(TL.v0+dt, TL.v1+dt); }
+    else tlZoom(e.deltaY < 0 ? 0.85 : 1.18, tlT(px(e))); }, {passive:false});
+  window.addEventListener("resize", ()=> requestAnimationFrame(tlDraw));
+})();
+
 /* ضبط يدوي بالنقر */
 let tap = null;
 $("tapSyncBtn").addEventListener("click", async ()=>{
@@ -1451,6 +1603,7 @@ $("tapSyncBtn").addEventListener("click", async ()=>{
     const labels = segmentLabels(); const list = rangeAyahs(txt);
     const texts = labels.map(l => l.kind==="istiadha" ? ISTIADHA : l.kind==="basmala" ? txt.basmala : (list.find(a=>a.num===l.num)||{verse:""}).verse);
     if (playing) stopPreview();
+    tlStop();
     tap = {labels, texts: texts.map(stripNum), times:[], src:null, t0:0, idx:0};
     $("tapStep").textContent = "اضغط «ابدأ» لتشغيل التلاوة";
     $("tapText").textContent = texts[0]||"";
@@ -1799,6 +1952,7 @@ function showTab(id){
   document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active", p.id===id));
   document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on", b.dataset.p===id));
   if (id==="p-fav") renderFavs();
+  if (id==="p-ayat") tlRefresh();
 }
 document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click", ()=>showTab(b.dataset.p)));
 
@@ -1849,7 +2003,7 @@ function onRangeChange(){
 $("surah").addEventListener("change", ()=>{ S.surah = +$("surah").value; S.from = 1; S.to = Math.min(AYAH_COUNTS[S.surah-1], 10); saveSettings(); syncUI(); onRangeChange(); });
 $("fromAyah").addEventListener("change", ()=>{ const n=AYAH_COUNTS[S.surah-1]; S.from = clamp(parseInt($("fromAyah").value)||1,1,n); if (S.to<S.from) S.to=S.from; saveSettings(); syncUI(); onRangeChange(); });
 $("toAyah").addEventListener("change", ()=>{ const n=AYAH_COUNTS[S.surah-1]; S.to = clamp(parseInt($("toAyah").value)||S.from,1,n); if (S.to<S.from) S.from=S.to; saveSettings(); syncUI(); onRangeChange(); });
-bindSeg("audioMode","audioMode", ()=>{ syncUI(); invalidate(); });
+bindSeg("audioMode","audioMode", ()=>{ syncUI(); invalidate(); tlRefresh(); });
 $("reciter").addEventListener("change", ()=>{ S.reciter = +$("reciter").value; saveSettings(); invalidate(); });
 $("customFolder").addEventListener("change", ()=>{ S.customFolder = $("customFolder").value.trim(); saveSettings(); invalidate(); });
 $("addBasmala").addEventListener("change", ()=>{ S.addBasmala = $("addBasmala").checked; saveSettings(); invalidate(); });
