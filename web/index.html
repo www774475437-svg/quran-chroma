@@ -258,15 +258,13 @@ footer a{color:var(--accent)}
       </select>
     </div>
     <div class="card">
-      <h3>الأحجام والمسافات</h3>
+      <h3>الأحجام</h3>
       <label class="f">حجم الآية</label>
       <div class="rangeRow"><input type="range" id="sVerse" min="40" max="140" value="88"><span id="sVerseV">88</span></div>
       <label class="f">حجم التفسير</label>
       <div class="rangeRow"><input type="range" id="sTafsir" min="20" max="90" value="42"><span id="sTafsirV">42</span></div>
       <label class="f">حجم الترجمة</label>
       <div class="rangeRow"><input type="range" id="sTrans" min="18" max="80" value="34"><span id="sTransV">34</span></div>
-      <label class="f">مهلة بين الآيات (للقارئ من القائمة) بالثواني</label>
-      <div class="rangeRow"><input type="range" id="gap" min="0" max="20" value="3"><span id="gapV">0.3</span></div>
     </div>
   </div>
 
@@ -379,7 +377,7 @@ const DEFAULTS = {
   aspect:"16:9", position:"center",
   cBg:"#000000", cVerse:"#ffffff", cTafsir:"#ffe500", cTrans:"#e6e6e6",
   fVerse:"Amiri Quran", fTafsir:"Tajawal", fTrans:"Poppins",
-  sVerse:88, sTafsir:42, sTrans:34, gap:3, quality:"1080", monitor:true
+  sVerse:88, sTafsir:42, sTrans:34, quality:"1080", monitor:true
 };
 let S = Object.assign({}, DEFAULTS);
 try { const saved = JSON.parse(localStorage.getItem("qc_settings")||"null"); if (saved && typeof saved==="object") for (const k in DEFAULTS) if (k in saved && typeof saved[k]===typeof DEFAULTS[k]) S[k]=saved[k]; } catch(e){}
@@ -476,7 +474,7 @@ function buildItemTexts(list){
   return list.map((a,i)=>({kind:"ayah", num:a.num, global:a.global, verse:a.verse, tafsir: S.tafsir==="custom" ? (lines[i]||"") : a.tafsir, trans:a.trans}));
 }
 function projectKey(){
-  return JSON.stringify([S.surah,S.from,S.to,S.audioMode,S.reciter,S.customFolder,S.addBasmala,S.tafsir,S.customTafsir,S.trans,S.gap, S.audioMode==="upload"?[uploadName,segments.map(s=>[s.start,s.end])]:0]);
+  return JSON.stringify([S.surah,S.from,S.to,S.audioMode,S.reciter,S.customFolder,S.addBasmala,S.tafsir,S.customTafsir,S.trans, S.audioMode==="upload"?[uploadName,segments.map(s=>[s.start,s.end])]:0]);
 }
 async function altAudioUrls(edition, surah){
   const key = "alt|"+edition+"|"+surah;
@@ -521,7 +519,7 @@ async function prepare(){
       const bufs = new Array(jobs.length); let done=0, next=0;
       const worker = async ()=>{ while(next<jobs.length){ const i=next++; bufs[i]=await loadAyahAudio(jobs[i].s, jobs[i].a); done++; setStatus("جاري تحميل التلاوة… "+done+" / "+jobs.length); } };
       await Promise.all([worker(),worker(),worker(),worker()]);
-      let t = 0.4; const gap = S.gap/10;
+      let t = 0.4; const gap = 0; // الآيات متصلة بلا فاصل
       jobs.forEach((j,i)=>{ const b=bufs[i]; plan.push({buffer:b, at:t, offset:0, dur:b.duration}); items.push({kind:j.kind, num:j.kind==="ayah"?j.num:null, verse:j.verse, tafsir:j.tafsir, trans:j.trans, start:t, end:t+b.duration}); t += b.duration + gap; });
       total = t - gap + 0.7;
     } else {
@@ -1215,7 +1213,6 @@ function syncUI(){
   document.querySelectorAll("#bgPresets .preset").forEach(p=>p.classList.toggle("on", p.dataset.c.toLowerCase()===S.cBg.toLowerCase()));
   for (const k of ["fVerse","fTafsir","fTrans"]) $(k).value = S[k];
   for (const k of ["sVerse","sTafsir","sTrans"]) { $(k).value = S[k]; $(k+"V").textContent = S[k]; }
-  $("gap").value = S.gap; $("gapV").textContent = (S.gap/10).toFixed(1);
   $("monitor").checked = S.monitor;
 }
 function onRangeChange(){
@@ -1243,8 +1240,6 @@ document.querySelectorAll("#bgPresets .preset").forEach(p=>p.addEventListener("c
 $("resetColors").addEventListener("click", ()=>{ for (const k of ["cBg","cVerse","cTafsir","cTrans"]) S[k]=DEFAULTS[k]; saveSettings(); syncUI(); if (!playing) renderStill(); });
 for (const k of ["fVerse","fTafsir","fTrans"]) $(k).addEventListener("change", async ()=>{ S[k]=$(k).value; saveSettings(); layoutCache.clear(); await ensureFonts(); layoutCache.clear(); if (!playing) renderStill(); });
 for (const k of ["sVerse","sTafsir","sTrans"]) $(k).addEventListener("input", ()=>{ S[k]=+$(k).value; $(k+"V").textContent=S[k]; saveSettings(); layoutCache.clear(); if (!playing) renderStill(); });
-$("gap").addEventListener("input", ()=>{ S.gap=+$("gap").value; $("gapV").textContent=(S.gap/10).toFixed(1); saveSettings(); });
-$("gap").addEventListener("change", ()=>{ invalidate(); });
 $("monitor").addEventListener("change", ()=>{ S.monitor = $("monitor").checked; saveSettings(); });
 
 window.addEventListener("error", e=>{ console.error(e.error||e.message); });
