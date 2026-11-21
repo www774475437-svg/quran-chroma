@@ -602,6 +602,22 @@ async function loadAyahAudio(surah, ayah){
   return buf;
 }
 
+/* حدود الصوت الفعلي داخل ملف الآية (بدون الصمت في أوله وآخره) */
+const trimCache = new WeakMap();
+function trimOf(buf){
+  let r = trimCache.get(buf); if (r) return r;
+  const sr = buf.sampleRate, win = Math.max(1, Math.round(sr*0.01)), n = Math.floor(buf.length/win);
+  const chs = []; for (let c=0;c<buf.numberOfChannels;c++) chs.push(buf.getChannelData(c));
+  const rms = new Float32Array(n); let peak = 0;
+  for (let i=0;i<n;i++){ let sum=0; const s0=i*win; for (let k=0;k<win;k++){ let v=0; for (const ch of chs) v+=ch[s0+k]; v/=chs.length; sum+=v*v; } rms[i]=Math.sqrt(sum/win); if (rms[i]>peak) peak=rms[i]; }
+  const thr = Math.max(peak*0.03, 0.0015);
+  let a=0, b=n-1;
+  while (a<n && rms[a]<thr) a++;
+  while (b>a && rms[b]<thr) b--;
+  if (a>=n){ r={start:0,end:buf.duration}; }
+  else { r={start:Math.max(0, a*win/sr - 0.03), end:Math.min(buf.duration, (b+1)*win/sr + 0.10)}; if (r.end-r.start<0.2) r={start:0,end:buf.duration}; }
+  trimCache.set(buf, r); return r;
+}
 let preparing = null;
 async function prepare(){
   const key = projectKey();
@@ -628,9 +644,13 @@ async function prepare(){
       const bufs = new Array(jobs.length); let done=0, next=0;
       const worker = async ()=>{ while(next<jobs.length){ const i=next++; bufs[i]=await loadAyahAudio(jobs[i].s, jobs[i].a); done++; setStatus("جاري تحميل التلاوة… "+done+" / "+jobs.length); } };
       await Promise.all([worker(),worker(),worker(),worker()]);
-      let t = 0.4; const gap = 0; // الآيات متصلة بلا فاصل
-      jobs.forEach((j,i)=>{ const b=bufs[i]; plan.push({buffer:b, at:t, offset:0, dur:b.duration}); items.push({kind:j.kind, num:j.kind==="ayah"?j.num:null, verse:j.verse, tafsir:j.tafsir, trans:j.trans, start:t, end:t+b.duration}); t += b.duration + gap; });
-      total = t - gap + 0.7;
+      // قصّ الصمت من أول كل ملف وآخره حتى تتصل الآيات بلا انقطاع
+      let t = 0.4; const JOIN = 0.12; // نَفَس قصير طبيعي بين الآيتين
+      jobs.forEach((j,i)=>{ const b=bufs[i]; const tr=trimOf(b); const d=tr.end-tr.start;
+        plan.push({buffer:b, at:t, offset:tr.start, dur:d});
+        items.push({kind:j.kind, num:j.kind==="ayah"?j.num:null, verse:j.verse, tafsir:j.tafsir, trans:j.trans, start:t, end:t+d});
+        t += d + JOIN; });
+      total = t - JOIN + 0.7;
     } else {
       if (!uploadBuf) throw new Error("اختر ملف الصوت أولاً");
       if (!segments.length) throw new Error("قسّم الآيات أولاً (تلقائي أو يدوي)");
