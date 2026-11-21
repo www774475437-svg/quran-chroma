@@ -196,6 +196,10 @@ footer a{color:var(--copper)}
 .tlBar{display:flex;align-items:center;gap:6px;margin-top:10px}
 .tlBar .btn.small{padding:10px 12px;white-space:nowrap}
 .tlTime{flex:1;text-align:center;white-space:nowrap;min-width:0;font-variant-numeric:tabular-nums;color:var(--muted);direction:ltr;font-size:14px}
+.iconGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.iconGrid button{border:2px solid transparent;background:none;padding:4px;border-radius:26%;cursor:pointer}
+.iconGrid button.on{border-color:var(--copper)}
+.iconGrid img{width:100%;display:block;border-radius:22%}
 /* شريط الأقسام العائم */
 nav.tabs{left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));padding:6px;border:1px solid var(--line);border-radius:999px;background:rgba(36,33,29,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 14px 34px -10px rgba(0,0,0,.85)}
 nav.tabs button{border-radius:999px;padding:9px 2px 8px;font-size:12px;font-weight:700}
@@ -415,6 +419,11 @@ body{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
       </select>
     </div>
     <div class="card">
+      <h3>أيقونة التطبيق</h3>
+      <div class="iconGrid" id="iconGrid"></div>
+      <div class="hint" id="iconHint"></div>
+    </div>
+    <div class="card">
       <h3>الأحجام</h3>
       <label class="f">حجم الآية</label>
       <div class="rangeRow"><input type="range" id="sVerse" min="40" max="140" value="88"><span id="sVerseV">88</span></div>
@@ -608,7 +617,7 @@ const DEFAULTS = {
   aspect:"16:9", position:"center",
   cBg:"#000000", cVerse:"#ffffff", cTafsir:"#ffe500", cTrans:"#e6e6e6",
   fVerse:"KFGQPC Hafs", fTafsir:"Tajawal", fTrans:"Poppins",
-  sVerse:88, sTafsir:42, sTrans:34, bgScale:100, bgX:0, bgY:0, bgDim:35, quality:"1080", monitor:true
+  sVerse:88, sTafsir:42, sTrans:34, appIcon:1, bgScale:100, bgX:0, bgY:0, bgDim:35, quality:"1080", monitor:true
 };
 let S = Object.assign({}, DEFAULTS);
 try { const saved = JSON.parse(localStorage.getItem("qc_settings")||"null"); if (saved && typeof saved==="object") for (const k in DEFAULTS) if (k in saved && typeof saved[k]===typeof DEFAULTS[k]) S[k]=saved[k]; } catch(e){}
@@ -1994,6 +2003,23 @@ document.addEventListener("keydown", e=>{
   if (e.code==="Space" && !/INPUT|TEXTAREA|SELECT/.test((e.target.tagName||"")) && !e.target.isContentEditable){ e.preventDefault(); togglePlay(); }
 });
 if ("serviceWorker" in navigator && !window.QCBridge && location.protocol==="https:"){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+
+/* ---------------- أيقونة التطبيق ---------------- */
+function applyIcon(){
+  const n = clamp(S.appIcon|0, 1, 6), src = "icons/icon"+n+".png";
+  document.querySelectorAll('link[rel="icon"],link[rel="apple-touch-icon"]').forEach(l=> l.href = src);
+  document.querySelectorAll("#iconGrid button").forEach((b,i)=> b.classList.toggle("on", i+1===n));
+}
+(function(){
+  const g = $("iconGrid");
+  for (let i=1;i<=6;i++){ const b = document.createElement("button"); b.setAttribute("aria-label","أيقونة "+i); b.innerHTML = '<img loading="lazy" alt="" src="icons/icon'+i+'.png">';
+    b.onclick = ()=>{ S.appIcon = i; saveSettings(); applyIcon();
+      if (window.QCBridge && QCBridge.setIcon){ const ok = QCBridge.setIcon(i); setStatus(ok ? "تم تغيير الأيقونة ✓ قد تحتاج ثوانيَ لتظهر في الشاشة الرئيسية." : "⚠️ تعذّر تغيير الأيقونة.", ok?"ok":"err"); }
+      else setStatus("تم اختيار الأيقونة ✓ أضف الموقع إلى الشاشة الرئيسية لتظهر بها.", "ok"); };
+    g.appendChild(b); }
+  $("iconHint").textContent = window.QCBridge ? "اختر الأيقونة التي تظهر للتطبيق في جوالك." : "اختر الأيقونة ثم أضف الموقع إلى الشاشة الرئيسية. إذا كنت أضفته من قبل، احذف الأيقونة القديمة وأضفه من جديد.";
+  applyIcon();
+})();
 
 /* ---------------- ربط الواجهة ---------------- */
 function showTab(id){

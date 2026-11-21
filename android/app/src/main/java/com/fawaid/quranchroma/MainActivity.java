@@ -218,6 +218,24 @@ public class MainActivity extends Activity {
             return "";
         }
 
+        /** تغيير أيقونة التطبيق (1 إلى 6) */
+        @JavascriptInterface
+        public boolean setIcon(int n) {
+            try {
+                if (n < 1 || n > 6) return false;
+                android.content.pm.PackageManager pm = getPackageManager();
+                for (int i = 1; i <= 6; i++) {
+                    android.content.ComponentName cn = new android.content.ComponentName(MainActivity.this, getPackageName() + ".Icon" + i);
+                    pm.setComponentEnabledSetting(cn,
+                            i == n ? android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED : android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                            android.content.pm.PackageManager.DONT_KILL_APP);
+                }
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
         @JavascriptInterface
         public void share() {
             runOnUiThread(() -> {
