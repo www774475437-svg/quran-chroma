@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&family=Aref+Ruqaa:wght@400;700&family=Reem+Kufi:wght@400;700&family=Lateef:wght@400;700&family=Tajawal:wght@400;700;800&family=Cairo:wght@400;700;800&family=Noto+Kufi+Arabic:wght@400;700&family=Poppins:wght@400;500;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
+@font-face{font-family:"KFGQPC Hafs";src:url("fonts/hafs.18.woff2") format("woff2");font-display:block}
 :root{
   --bg:#0b0d0c; --panel:#141716; --panel2:#1b1f1d; --line:#2a2f2c; --text:#eef2ef; --muted:#9aa49e;
   --accent:#f5c518; --accent2:#2fbf71; --danger:#ff5a5a;
@@ -80,7 +81,7 @@ video.result{width:100%;border-radius:12px;margin-top:10px;background:#000}
 .favItem button{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:8px;padding:6px 10px;cursor:pointer;font:inherit;font-size:13px}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
 .overlay.show{display:flex}
-.overlay .big{font-family:"Amiri Quran","Amiri",serif;font-size:26px;line-height:2;margin:14px 0;max-width:640px}
+.overlay .big{font-family:"KFGQPC Hafs","Amiri Quran",serif;font-size:26px;line-height:2;margin:14px 0;max-width:640px}
 .overlay .tapBtn{width:min(80vw,320px);height:120px;border-radius:20px;border:none;background:var(--accent);color:#000;font:inherit;font-size:22px;font-weight:800;cursor:pointer}
 .switch{display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:14px}
 .switch input{width:22px;height:22px;accent-color:var(--accent)}
@@ -233,7 +234,8 @@ footer a{color:var(--accent)}
       <h3>الخطوط</h3>
       <label class="f">خط الآيات</label>
       <select id="fVerse">
-        <option value="Amiri Quran">الخط العثماني (أميري قرآن)</option>
+        <option value="KFGQPC Hafs">خط مصحف المدينة (مثل الفيديو)</option>
+        <option value="Amiri Quran">عثماني بنقاط الياء (أميري قرآن)</option>
         <option value="Scheherazade New">عثماني — شهرزاد</option>
         <option value="Amiri">النسخ — أميري</option>
         <option value="Noto Naskh Arabic">النسخ — نوتو</option>
@@ -364,9 +366,12 @@ const RECITERS = [
   {name:"أكرم العلاقمي", folder:"Akram_AlAlaqimy_128kbps"}
 ];
 const RTL_LANGS = ["ar","ur","fa","ps","ug","he","dv","ku","sd"];
-const ISTIADHA = "أَعُوذُ بِٱللَّهِ مِنَ ٱلشَّيْطَٰنِ ٱلرَّجِيمِ";
-const BASMALA_FALLBACK = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
-const SAMPLE = [{kind:"ayah", num:25, verse:"قَالَ رَبِّ ٱشْرَحْ لِى صَدْرِى", tafsir:"قال موسى: رب وسِّع لي صدري", trans:"[Moses] said, \"My Lord, expand for me my breast [with assurance]\"", start:0, end:3}];
+const ISTIADHA = "أَعُوذُ بِٱللَّهِ مِنَ ٱلشَّيۡطَٰنِ ٱلرَّجِيمِ";
+const BASMALA = "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ";
+const HAFS = "KFGQPC Hafs";
+/* نص المصحف من مجمع الملك فهد: رقم الآية في آخر النص بعد مسافة ثابتة، وخط المصحف يرسمه زخرفةً */
+const stripNum = t => String(t||"").replace(/[\u00A0\s]*[\u0660-\u0669]+\s*$/,"").trim();
+const SAMPLE = [{kind:"ayah", num:25, verse:"قَالَ رَبِّ ٱشۡرَحۡ لِي صَدۡرِي\u00A0٢٥", tafsir:"قال موسى: رب وسِّع لي صدري", trans:"[Moses] said, \"My Lord, expand for me my breast [with assurance]\"", start:0, end:3}];
 
 /* ---------------- الإعدادات ---------------- */
 const DEFAULTS = {
@@ -376,11 +381,12 @@ const DEFAULTS = {
   tafsir:"ar.muyassar", customTafsir:"", trans:"en.sahih",
   aspect:"16:9", position:"center",
   cBg:"#000000", cVerse:"#ffffff", cTafsir:"#ffe500", cTrans:"#e6e6e6",
-  fVerse:"Amiri Quran", fTafsir:"Tajawal", fTrans:"Poppins",
+  fVerse:"KFGQPC Hafs", fTafsir:"Tajawal", fTrans:"Poppins",
   sVerse:88, sTafsir:42, sTrans:34, quality:"1080", monitor:true
 };
 let S = Object.assign({}, DEFAULTS);
 try { const saved = JSON.parse(localStorage.getItem("qc_settings")||"null"); if (saved && typeof saved==="object") for (const k in DEFAULTS) if (k in saved && typeof saved[k]===typeof DEFAULTS[k]) S[k]=saved[k]; } catch(e){}
+try { if (localStorage.getItem("qc_v")!=="2"){ if (S.fVerse==="Amiri Quran") S.fVerse=HAFS; localStorage.setItem("qc_v","2"); } } catch(e){}
 function saveSettings(){ try{ localStorage.setItem("qc_settings", JSON.stringify(S)); }catch(e){} }
 
 /* ---------------- أدوات ---------------- */
@@ -425,33 +431,35 @@ function decode(buf){
 const textCache = new Map();
 function cleanText(t){ return String(t||"").replace(/﻿/g,"").replace(/\s+/g," ").trim(); }
 async function loadSurahText(surah){
-  const eds = ["quran-uthmani"];
+  const eds = [];
   if (S.tafsir!=="custom") eds.push(S.tafsir);
   eds.push(S.trans);
   const key = surah+"|"+eds.join(",");
   if (textCache.has(key)) return textCache.get(key);
+  // نص القرآن (مصحف المدينة) محفوظ داخل التطبيق
+  let quran = textCache.get("q|"+surah);
+  if (!quran){
+    quran = await fetchWithRetry("quran/"+surah+".json", "json");
+    if (!Array.isArray(quran) || !quran.length) throw new Error("no quran text");
+    textCache.set("q|"+surah, quran);
+  }
+  // التفسير والترجمة من الإنترنت
   let json = null;
-  try { const c = localStorage.getItem("qc_t_"+key); if (c) json = JSON.parse(c); } catch(e){}
+  try { const c = localStorage.getItem("qc_t2_"+key); if (c) json = JSON.parse(c); } catch(e){}
   if (!json){
     json = await fetchWithRetry("https://api.alquran.cloud/v1/surah/"+surah+"/editions/"+eds.join(","), "json");
     if (!json || json.code!==200 || !Array.isArray(json.data)) throw new Error("bad data");
-    try { localStorage.setItem("qc_t_"+key, JSON.stringify(json)); } catch(e){ try{ for (const k of Object.keys(localStorage)) if (k.startsWith("qc_t_")) localStorage.removeItem(k); }catch(_){} }
+    try { localStorage.setItem("qc_t2_"+key, JSON.stringify(json)); } catch(e){ try{ for (const k of Object.keys(localStorage)) if (k.startsWith("qc_t")) localStorage.removeItem(k); }catch(_){} }
   }
   const byEd = {};
   for (const d of json.data) byEd[d.edition.identifier] = d.ayahs;
-  const q = byEd["quran-uthmani"];
-  if (!q) throw new Error("no quran text");
-  let basmala = BASMALA_FALLBACK;
-  const ayahs = q.map((a,i)=>{
-    let text = cleanText(a.text);
-    if (surah!==1 && a.numberInSurah===1 && text.startsWith("بِسْمِ")){
-      const w = text.split(" "); basmala = w.slice(0,4).join(" "); text = w.slice(4).join(" ") || text;
-    }
+  const ref = byEd[S.trans] || byEd[S.tafsir] || [];
+  const ayahs = quran.map((t,i)=>{
     const tf = S.tafsir!=="custom" && byEd[S.tafsir] ? cleanText(byEd[S.tafsir][i] && byEd[S.tafsir][i].text) : "";
     const tr = byEd[S.trans] ? cleanText(byEd[S.trans][i] && byEd[S.trans][i].text) : "";
-    return {num:a.numberInSurah, global:a.number, verse:text, tafsir:tf, trans:tr};
+    return {num:i+1, global: ref[i] ? ref[i].number : 0, verse:String(t).trim(), tafsir:tf, trans:tr};
   });
-  const out = {ayahs, basmala};
+  const out = {ayahs, basmala:BASMALA};
   textCache.set(key, out);
   return out;
 }
@@ -584,14 +592,16 @@ function fitBlock(ctx, text, maxW, basePx, minRatio, maxLines, weight, fam, fall
   return {px, pages: paginate(lines, maxLines), font: ctx.font};
 }
 function getLayout(ctx, item, W, H){
-  const key = [item.verse.length, item.num, item.kind, item.start, W, H, S.fVerse,S.fTafsir,S.fTrans,S.sVerse,S.sTafsir,S.sTrans,S.showTafsir,S.showTrans,S.showNumber, item.tafsir.length, item.trans.length].join("|");
+  const key = [item.verse.length, item.num, S.fVerse, item.kind, item.start, W, H, S.fVerse,S.fTafsir,S.fTrans,S.sVerse,S.sTafsir,S.sTrans,S.showTafsir,S.showTrans,S.showNumber, item.tafsir.length, item.trans.length].join("|");
   let L = layoutCache.get(key); if (L) return L;
   const unit = Math.min(W,H)/1080;
   const portrait = H > W*1.2;
   const maxW = W * (portrait ? 0.88 : 0.84);
-  const markerW = px => S.showNumber && item.num ? px*1.15 : 0;
+  const hafs = S.fVerse===HAFS;
+  const vText = (hafs && S.showNumber && item.num) ? item.verse : stripNum(item.verse);
+  const markerW = px => (!hafs && S.showNumber && item.num) ? px*1.15 : 0;
   ctx.direction = "rtl";
-  const verse = fitBlock(ctx, item.verse, maxW, S.sVerse*unit, 0.65, portrait?5:3, "normal", S.fVerse, "\"Amiri\", serif", markerW);
+  const verse = fitBlock(ctx, vText, maxW, S.sVerse*unit, 0.65, portrait?5:3, "normal", S.fVerse, "\"Amiri\", serif", markerW);
   const tafsir = S.showTafsir && item.tafsir ? fitBlock(ctx, item.tafsir, maxW, S.sTafsir*unit, 0.75, portrait?5:3, "bold", S.fTafsir, "\"Tajawal\", sans-serif") : null;
   const lang = (S.trans||"en").split(".")[0];
   const transRtl = RTL_LANGS.includes(lang);
@@ -671,7 +681,7 @@ function drawFrame(ctx, W, H, t, items, total){
     ctx.font = L.verse.font; ctx.fillStyle = S.cVerse; ctx.direction="rtl";
     vLines.forEach((line, li)=>{
       const cy = y + vLH*(li+0.5);
-      const withMarker = S.showNumber && it.num && isLastVersePage && li===vLines.length-1;
+      const withMarker = S.fVerse!==HAFS && S.showNumber && it.num && isLastVersePage && li===vLines.length-1;
       if (withMarker){
         const lw = ctx.measureText(line).width;
         const r = L.verse.px*0.42, gap = L.verse.px*0.3;
@@ -1052,7 +1062,7 @@ $("autoSplitBtn").addEventListener("click", async ()=>{
     const labels = segmentLabels();
     const list = rangeAyahs(txt);
     const texts = labels.map(l => l.kind==="istiadha" ? ISTIADHA : l.kind==="basmala" ? txt.basmala : (list.find(a=>a.num===l.num)||{verse:""}).verse);
-    const res = autoSplit(uploadBuf, texts);
+    const res = autoSplit(uploadBuf, texts.map(stripNum));
     segments = labels.map((l,i)=>({kind:l.kind, label:l.label, start:res[i].start, end:res[i].end}));
     renderSegList(); invalidate();
     await prepare();
@@ -1095,7 +1105,7 @@ $("tapSyncBtn").addEventListener("click", async ()=>{
     const labels = segmentLabels(); const list = rangeAyahs(txt);
     const texts = labels.map(l => l.kind==="istiadha" ? ISTIADHA : l.kind==="basmala" ? txt.basmala : (list.find(a=>a.num===l.num)||{verse:""}).verse);
     if (playing) stopPreview();
-    tap = {labels, texts, times:[], src:null, t0:0, idx:0};
+    tap = {labels, texts: texts.map(stripNum), times:[], src:null, t0:0, idx:0};
     $("tapStep").textContent = "اضغط «ابدأ» لتشغيل التلاوة";
     $("tapText").textContent = texts[0]||"";
     $("tapBtn").textContent = "ابدأ";

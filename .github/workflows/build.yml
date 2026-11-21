@@ -45,7 +45,7 @@ jobs:
       - name: نسخ صفحة التطبيق إلى الأندرويد
         run: |
           mkdir -p android/app/src/main/assets
-          cp web/index.html android/app/src/main/assets/index.html
+          cp -r web/. android/app/src/main/assets/
       - name: بناء APK
         run: gradle -p android assembleRelease --no-daemon --stacktrace
       - name: تجهيز الملف
