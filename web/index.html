@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d0c">
+<title>القرآن كروما</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&family=Aref+Ruqaa:wght@400;700&family=Reem+Kufi:wght@400;700&family=Lateef:wght@400;700&family=Tajawal:wght@400;700;800&family=Cairo:wght@400;700;800&family=Noto+Kufi+Arabic:wght@400;700&family=Poppins:wght@400;500;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0d0c; --panel:#141716; --panel2:#1b1f1d; --line:#2a2f2c; --text:#eef2ef; --muted:#9aa49e;
+  --accent:#f5c518; --accent2:#2fbf71; --danger:#ff5a5a;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:"Tajawal","Cairo",system-ui,sans-serif;font-size:16px}
+body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(10px + env(safe-area-inset-top)) 14px 8px}
+header h1{margin:0;font-size:20px;font-weight:800;letter-spacing:0}
+header h1 span{color:var(--accent)}
+header .dev{font-size:12px;color:var(--muted)}
+header a{color:var(--accent);text-decoration:none;font-size:12px;border:1px solid var(--line);padding:6px 10px;border-radius:999px;white-space:nowrap}
+.stage{position:sticky;top:0;z-index:5;background:var(--bg);padding:6px 12px 8px;border-bottom:1px solid var(--line)}
+.canvasWrap{display:flex;justify-content:center;align-items:center;background:#000;border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+#preview{display:block;max-width:100%;max-height:46vh;width:auto;height:auto}
+.controls{display:flex;align-items:center;gap:10px;margin-top:8px}
+.playBtn{width:46px;height:46px;border-radius:50%;border:none;background:var(--accent);color:#000;font-size:20px;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer}
+.playBtn:disabled{opacity:.5}
+.seek{flex:1;direction:ltr}
+.time{font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted);min-width:86px;text-align:center;direction:ltr}
+.status{font-size:13px;color:var(--muted);margin-top:6px;min-height:18px}
+.status.err{color:var(--danger)}
+.status.ok{color:var(--accent2)}
+main{padding:10px 12px}
+.panel{display:none}
+.panel.active{display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
+.card h3{margin:0 0 10px;font-size:15px;color:var(--accent)}
+label.f{display:block;font-size:13px;color:var(--muted);margin:8px 0 4px}
+select,input[type=number],input[type=text],textarea{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:15px}
+textarea{min-height:120px;resize:vertical;line-height:1.7}
+.row{display:flex;gap:10px}
+.row>*{flex:1;min-width:0}
+.seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;border:none;background:transparent;color:var(--muted);padding:9px 6px;border-radius:9px;font:inherit;font-size:14px;cursor:pointer}
+.seg button.on{background:var(--accent);color:#000;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--panel2);color:var(--muted);padding:8px 14px;border-radius:999px;font:inherit;font-size:14px;cursor:pointer}
+.chip.on{border-color:var(--accent);color:#000;background:var(--accent);font-weight:700}
+.btn{display:block;width:100%;border:none;border-radius:12px;padding:13px;font:inherit;font-size:16px;font-weight:700;cursor:pointer;background:var(--panel2);color:var(--text);border:1px solid var(--line);margin-top:10px}
+.btn.primary{background:var(--accent);color:#000;border-color:var(--accent)}
+.btn.green{background:var(--accent2);color:#000;border-color:var(--accent2)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.small{display:inline-block;width:auto;padding:8px 12px;font-size:14px;margin:0}
+.hint{font-size:12.5px;color:var(--muted);line-height:1.7;margin-top:6px}
+.colors{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.colors label{display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:14px}
+input[type=color]{width:38px;height:30px;border:none;background:none;padding:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.rangeRow{display:flex;align-items:center;gap:10px}
+.rangeRow span{min-width:36px;text-align:center;font-size:13px;color:var(--muted)}
+.presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.preset{width:38px;height:38px;border-radius:10px;border:2px solid var(--line);cursor:pointer}
+.preset.on{border-color:var(--accent)}
+nav.tabs{position:fixed;bottom:0;left:0;right:0;display:flex;background:#0f1211;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:20}
+nav.tabs button{flex:1;background:none;border:none;color:var(--muted);font:inherit;font-size:12px;padding:8px 2px 9px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+nav.tabs button svg{width:22px;height:22px}
+nav.tabs button.on{color:var(--accent)}
+.segList{max-height:320px;overflow:auto;margin-top:8px}
+.segRow{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}
+.segRow .lbl{width:74px;flex:none;color:var(--text)}
+.segRow input{padding:6px;font-size:13px;direction:ltr;text-align:center}
+.segRow button{flex:none;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:8px;padding:6px 8px;cursor:pointer}
+.progress{height:10px;background:var(--panel2);border-radius:999px;overflow:hidden;border:1px solid var(--line);margin-top:10px}
+.progress>div{height:100%;width:0;background:var(--accent);transition:width .2s}
+video.result{width:100%;border-radius:12px;margin-top:10px;background:#000}
+.favItem{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.favItem .t{flex:1;font-size:14px}
+.favItem button{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:8px;padding:6px 10px;cursor:pointer;font:inherit;font-size:13px}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
+.overlay.show{display:flex}
+.overlay .big{font-family:"Amiri Quran","Amiri",serif;font-size:26px;line-height:2;margin:14px 0;max-width:640px}
+.overlay .tapBtn{width:min(80vw,320px);height:120px;border-radius:20px;border:none;background:var(--accent);color:#000;font:inherit;font-size:22px;font-weight:800;cursor:pointer}
+.switch{display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:14px}
+.switch input{width:22px;height:22px;accent-color:var(--accent)}
+footer{text-align:center;font-size:12px;color:var(--muted);padding:10px 0 20px}
+footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>القرآن <span>كروما</span></h1>
+    <div class="dev">تطوير: أبو عبد الرحمن أحمد الأثري</div>
+  </div>
+  <a href="https://t.me/alhsaar4" target="_blank" rel="noopener">تواصل مع المطوّر</a>
+</header>
+
+<section class="stage">
+  <div class="canvasWrap"><canvas id="preview" width="960" height="540"></canvas></div>
+  <div class="controls">
+    <button class="playBtn" id="playBtn" aria-label="تشغيل">▶</button>
+    <input type="range" class="seek" id="seek" min="0" max="1000" value="0">
+    <div class="time" id="timeLbl">0:00 / 0:00</div>
+  </div>
+  <div class="status" id="status">اختر السورة والآيات ثم اضغط ▶ للمعاينة.</div>
+</section>
+
+<main>
+  <!-- ========== الآيات والصوت ========== -->
+  <div class="panel active" id="p-ayat">
+    <div class="card">
+      <h3>السورة والآيات</h3>
+      <label class="f">السورة</label>
+      <select id="surah"></select>
+      <div class="row">
+        <div><label class="f">من آية</label><input type="number" id="fromAyah" min="1" value="1" inputmode="numeric"></div>
+        <div><label class="f">إلى آية</label><input type="number" id="toAyah" min="1" value="7" inputmode="numeric"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>مصدر الصوت</h3>
+      <div class="seg" id="audioMode">
+        <button data-v="reciter" class="on">قارئ من القائمة</button>
+        <button data-v="upload">صوت أو فيديو من عندي</button>
+      </div>
+
+      <div id="reciterBox">
+        <label class="f">القارئ</label>
+        <select id="reciter"></select>
+        <div class="switch"><span>إضافة البسملة في البداية</span><input type="checkbox" id="addBasmala"></div>
+        <details>
+          <summary class="hint" style="cursor:pointer">قارئ غير موجود في القائمة؟</summary>
+          <label class="f">اسم مجلد القارئ في موقع everyayah.com (اختياري)</label>
+          <input type="text" id="customFolder" placeholder="مثال: Yasser_Ad-Dussary_128kbps" dir="ltr">
+          <div class="hint">إذا كتبت اسماً هنا يستخدمه التطبيق بدل القارئ المختار.</div>
+        </details>
+      </div>
+
+      <div id="uploadBox" style="display:none">
+        <label class="btn" for="audioFile" style="text-align:center">📁 اختر ملف صوت أو فيديو</label>
+        <input type="file" id="audioFile" accept="audio/*,video/*,.mp3,.m4a,.mp4,.mov,.wav,.aac,.ogg,.webm" style="display:none">
+        <div class="hint" id="fileInfo">يستخرج التطبيق الصوت من الفيديو تلقائياً. اختر السورة والآيات التي يقرؤها القارئ في الملف.</div>
+        <div class="switch"><span>يبدأ القارئ بالاستعاذة</span><input type="checkbox" id="hasIstiadha"></div>
+        <div class="switch"><span>يبدأ القارئ بالبسملة</span><input type="checkbox" id="hasBasmala"></div>
+        <button class="btn primary" id="autoSplitBtn" disabled>✨ تقسيم الآيات تلقائياً</button>
+        <button class="btn" id="tapSyncBtn" disabled>👆 ضبط يدوي بالنقر مع التلاوة</button>
+        <div class="hint">التقسيم التلقائي يعتمد على وقفات القارئ بين الآيات. إذا لم يكن دقيقاً، استعمل الضبط اليدوي أو عدّل الأوقات بالأسفل.</div>
+        <div class="segList" id="segList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== النصوص ========== -->
+  <div class="panel" id="p-text">
+    <div class="card">
+      <h3>ماذا يظهر في الفيديو؟</h3>
+      <div class="chips">
+        <button class="chip on" data-toggle="showTafsir">التفسير</button>
+        <button class="chip on" data-toggle="showTrans">الترجمة</button>
+        <button class="chip on" data-toggle="showNumber">رقم الآية</button>
+        <button class="chip on" data-toggle="fade">تلاشي ناعم</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>التفسير (باللون الأصفر)</h3>
+      <select id="tafsirSel">
+        <option value="ar.muyassar">التفسير الميسر</option>
+        <option value="ar.jalalayn">تفسير الجلالين</option>
+        <option value="custom">تفسير من عندي</option>
+      </select>
+      <div id="customTafsirBox" style="display:none">
+        <label class="f">اكتب تفسير كل آية في سطر مستقل، بترتيب الآيات المختارة</label>
+        <textarea id="customTafsir" placeholder="السطر الأول = تفسير الآية الأولى المختارة&#10;السطر الثاني = تفسير الآية الثانية ..."></textarea>
+      </div>
+      <div class="hint">«المختصر في التفسير» غير متوفر في المصدر المجاني الذي يعتمد عليه التطبيق، وتقدر تضيفه من «تفسير من عندي».</div>
+    </div>
+    <div class="card">
+      <h3>الترجمة</h3>
+      <select id="transSel">
+        <option value="en.sahih">English — Saheeh International (الأدق والأشهر)</option>
+        <option value="en.hilali">English — Hilali &amp; Muhsin Khan</option>
+        <option value="en.pickthall">English — Pickthall</option>
+        <option value="en.yusufali">English — Yusuf Ali</option>
+        <option value="fr.hamidullah">Français — Hamidullah</option>
+        <option value="ur.jalandhry">اردو — جالندھری</option>
+        <option value="id.indonesian">Indonesia — Kemenag</option>
+        <option value="tr.diyanet">Türkçe — Diyanet</option>
+        <option value="ru.kuliev">Русский — Кулиев</option>
+        <option value="ms.basmeih">Melayu — Basmeih</option>
+        <option value="de.bubenheim">Deutsch — Bubenheim</option>
+        <option value="es.cortes">Español — Cortés</option>
+        <option value="bn.bengali">বাংলা — Muhiuddin Khan</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ========== التصميم ========== -->
+  <div class="panel" id="p-design">
+    <div class="card">
+      <h3>مقاس الفيديو</h3>
+      <div class="seg" id="aspect">
+        <button data-v="16:9" class="on">عرضي 16:9</button>
+        <button data-v="9:16">طولي 9:16</button>
+        <button data-v="1:1">مربع 1:1</button>
+      </div>
+      <label class="f">مكان النص</label>
+      <div class="seg" id="position">
+        <button data-v="top">أعلى</button>
+        <button data-v="center" class="on">وسط</button>
+        <button data-v="bottom">أسفل</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>الألوان</h3>
+      <div class="presets" id="bgPresets">
+        <div class="preset on" data-c="#000000" style="background:#000" title="أسود"></div>
+        <div class="preset" data-c="#00b140" style="background:#00b140" title="أخضر كروما"></div>
+        <div class="preset" data-c="#0047bb" style="background:#0047bb" title="أزرق كروما"></div>
+        <div class="preset" data-c="#ffffff" style="background:#fff" title="أبيض"></div>
+      </div>
+      <div class="colors">
+        <label>الخلفية <input type="color" id="cBg" value="#000000"></label>
+        <label>الآية <input type="color" id="cVerse" value="#ffffff"></label>
+        <label>التفسير <input type="color" id="cTafsir" value="#ffe500"></label>
+        <label>الترجمة <input type="color" id="cTrans" value="#e6e6e6"></label>
+      </div>
+      <button class="btn small" id="resetColors" style="margin-top:10px">إرجاع ألوان الفيديو الأصلي</button>
+    </div>
+    <div class="card">
+      <h3>الخطوط</h3>
+      <label class="f">خط الآيات</label>
+      <select id="fVerse">
+        <option value="Amiri Quran">الخط العثماني (أميري قرآن)</option>
+        <option value="Scheherazade New">عثماني — شهرزاد</option>
+        <option value="Amiri">النسخ — أميري</option>
+        <option value="Noto Naskh Arabic">النسخ — نوتو</option>
+        <option value="Lateef">لطيف</option>
+        <option value="Aref Ruqaa">الرقعة</option>
+        <option value="Reem Kufi">الكوفي</option>
+      </select>
+      <label class="f">خط التفسير</label>
+      <select id="fTafsir">
+        <option value="Tajawal">تجوّل (مثل الفيديو)</option>
+        <option value="Cairo">القاهرة</option>
+        <option value="Noto Kufi Arabic">كوفي حديث</option>
+        <option value="Amiri">النسخ — أميري</option>
+        <option value="Noto Naskh Arabic">النسخ — نوتو</option>
+        <option value="Aref Ruqaa">الرقعة</option>
+      </select>
+      <label class="f">خط الترجمة</label>
+      <select id="fTrans">
+        <option value="Poppins">Poppins</option>
+        <option value="Inter">Inter</option>
+        <option value="Amiri">Amiri</option>
+      </select>
+    </div>
+    <div class="card">
+      <h3>الأحجام والمسافات</h3>
+      <label class="f">حجم الآية</label>
+      <div class="rangeRow"><input type="range" id="sVerse" min="40" max="140" value="88"><span id="sVerseV">88</span></div>
+      <label class="f">حجم التفسير</label>
+      <div class="rangeRow"><input type="range" id="sTafsir" min="20" max="90" value="42"><span id="sTafsirV">42</span></div>
+      <label class="f">حجم الترجمة</label>
+      <div class="rangeRow"><input type="range" id="sTrans" min="18" max="80" value="34"><span id="sTransV">34</span></div>
+      <label class="f">مهلة بين الآيات (للقارئ من القائمة) بالثواني</label>
+      <div class="rangeRow"><input type="range" id="gap" min="0" max="20" value="3"><span id="gapV">0.3</span></div>
+    </div>
+  </div>
+
+  <!-- ========== المفضلة ========== -->
+  <div class="panel" id="p-fav">
+    <div class="card">
+      <h3>⭐ المفضلة</h3>
+      <button class="btn primary" id="addFav">⭐ حفظ الاختيار الحالي في المفضلة</button>
+      <div id="favList" style="margin-top:8px"></div>
+      <div class="hint">تُحفظ المفضلة والإعدادات في هذا الجهاز فقط.</div>
+    </div>
+  </div>
+
+  <!-- ========== تصدير ========== -->
+  <div class="panel" id="p-export">
+    <div class="card">
+      <h3>صناعة الفيديو</h3>
+      <label class="f">الجودة</label>
+      <div class="seg" id="quality">
+        <button data-v="720">720p (أسرع)</button>
+        <button data-v="1080" class="on">1080p (أوضح)</button>
+      </div>
+      <div class="switch"><span>اسمع الصوت أثناء الصناعة</span><input type="checkbox" id="monitor" checked></div>
+      <button class="btn primary" id="exportBtn">🎬 صناعة الفيديو</button>
+      <button class="btn" id="cancelBtn" style="display:none">إيقاف</button>
+      <div class="progress"><div id="prog"></div></div>
+      <div class="hint">الصناعة تأخذ نفس مدة التلاوة. اترك الصفحة مفتوحة والشاشة مضاءة حتى تنتهي.</div>
+      <div id="resultBox" style="display:none">
+        <video class="result" id="resultVideo" controls playsinline></video>
+        <a class="btn green" id="downloadLink" style="text-align:center;text-decoration:none">⬇️ تحميل الفيديو</a>
+        <button class="btn" id="shareBtn" style="display:none">📤 مشاركة / حفظ في الصور</button>
+        <div class="hint" id="resultInfo"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card" id="apkCard" style="display:none;text-align:center">
+    <h3>📱 تطبيق الأندرويد</h3>
+    <a class="btn primary" href="https://github.com/www774475437-svg/quran-chroma/releases/latest/download/quran-chroma.apk" style="text-decoration:none">⬇️ تحميل التطبيق (APK)</a>
+    <div class="hint">حمّل الملف ثم افتحه للتثبيت. إذا طلب الجوال السماح بالتثبيت من مصادر أخرى فاسمح به.</div>
+  </div>
+  <footer>تطوير: أبو عبد الرحمن أحمد الأثري · <a href="https://t.me/alhsaar4" target="_blank" rel="noopener">تيليجرام</a><br>النصوص من alquran.cloud · التلاوات من everyayah.com</footer>
+</main>
+
+<nav class="tabs" id="tabs">
+  <button data-p="p-ayat" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h6M8 11h6"/></svg>الآيات</button>
+  <button data-p="p-text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h10M4 18h7"/></svg>النصوص</button>
+  <button data-p="p-design"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="10" r="1.3"/><circle cx="12" cy="7.5" r="1.3"/><circle cx="15.5" cy="10" r="1.3"/><path d="M12 21a3 3 0 0 1 0-6h1"/></svg>التصميم</button>
+  <button data-p="p-fav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>المفضلة</button>
+  <button data-p="p-export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="14" height="14" rx="2"/><path d="m17 10 4-2v8l-4-2"/></svg>تصدير</button>
+</nav>
+
+<div class="overlay" id="tapOverlay">
+  <div class="hint" id="tapStep" style="font-size:15px;color:#fff"></div>
+  <div class="big" id="tapText"></div>
+  <button class="tapBtn" id="tapBtn">ابدأ</button>
+  <div class="row" style="margin-top:16px;width:min(80vw,320px)">
+    <button class="btn" id="tapEnd" style="margin:0">انتهى</button>
+    <button class="btn" id="tapCancel" style="margin:0">إلغاء</button>
+  </div>
+  <div class="hint" style="margin-top:12px">اضغط الزر الكبير في اللحظة التي يبدأ فيها القارئ كل آية.</div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   القرآن كروما — تطوير: أبو عبد الرحمن أحمد الأثري
+   ============================================================ */
+
+const SURAH_NAMES = "الفاتحة البقرة آل_عمران النساء المائدة الأنعام الأعراف الأنفال التوبة يونس هود يوسف الرعد إبراهيم الحجر النحل الإسراء الكهف مريم طه الأنبياء الحج المؤمنون النور الفرقان الشعراء النمل القصص العنكبوت الروم لقمان السجدة الأحزاب سبأ فاطر يس الصافات ص الزمر غافر فصلت الشورى الزخرف الدخان الجاثية الأحقاف محمد الفتح الحجرات ق الذاريات الطور النجم القمر الرحمن الواقعة الحديد المجادلة الحشر الممتحنة الصف الجمعة المنافقون التغابن الطلاق التحريم الملك القلم الحاقة المعارج نوح الجن المزمل المدثر القيامة الإنسان المرسلات النبأ النازعات عبس التكوير الانفطار المطففين الانشقاق البروج الطارق الأعلى الغاشية الفجر البلد الشمس الليل الضحى الشرح التين العلق القدر البينة الزلزلة العاديات القارعة التكاثر العصر الهمزة الفيل قريش الماعون الكوثر الكافرون النصر المسد الإخلاص الفلق الناس".split(" ").map(s=>s.replace(/_/g," "));
+const AYAH_COUNTS = [7,286,200,176,120,165,206,75,129,109,123,111,43,52,99,128,111,110,98,135,112,78,118,64,77,227,93,88,69,60,34,30,73,54,45,83,182,88,75,85,54,53,89,59,37,35,38,29,18,45,60,49,62,55,78,96,29,22,24,13,14,11,11,18,12,12,30,52,52,44,28,28,20,56,40,31,50,40,46,42,29,19,36,25,22,17,19,26,30,20,15,21,11,8,8,19,5,8,8,11,11,8,3,9,5,4,7,3,6,3,5,4,5,6];
+
+/* القرّاء: مجلد everyayah + (اختياري) نسخة احتياطية من alquran.cloud */
+const RECITERS = [
+  {name:"ياسر الدوسري", folder:"Yasser_Ad-Dussary_128kbps"},
+  {name:"مشاري راشد العفاسي", folder:"Alafasy_128kbps", alt:"ar.alafasy"},
+  {name:"عبد الرحمن السديس", folder:"Abdurrahmaan_As-Sudais_192kbps", alt:"ar.abdurrahmaansudais"},
+  {name:"سعود الشريم", folder:"Saood_ash-Shuraym_128kbps", alt:"ar.saoodshuraym"},
+  {name:"ماهر المعيقلي", folder:"MaherAlMuaiqly128kbps", alt:"ar.mahermuaiqly"},
+  {name:"عبد الباسط عبد الصمد (مرتل)", folder:"Abdul_Basit_Murattal_192kbps", alt:"ar.abdulbasitmurattal"},
+  {name:"محمود خليل الحصري", folder:"Husary_128kbps", alt:"ar.husary"},
+  {name:"محمد صديق المنشاوي (مرتل)", folder:"Minshawy_Murattal_128kbps", alt:"ar.minshawi"},
+  {name:"أحمد بن علي العجمي", folder:"Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net", alt:"ar.ahmedajamy"},
+  {name:"أبو بكر الشاطري", folder:"Abu_Bakr_Ash-Shaatree_128kbps", alt:"ar.shaatree"},
+  {name:"هاني الرفاعي", folder:"Hani_Rifai_192kbps", alt:"ar.hanirifai"},
+  {name:"محمد أيوب", folder:"Muhammad_Ayyoub_128kbps", alt:"ar.muhammadayyoub"},
+  {name:"محمد جبريل", folder:"Muhammad_Jibreel_128kbps", alt:"ar.muhammadjibreel"},
+  {name:"عبد الله بصفر", folder:"Abdullah_Basfar_192kbps", alt:"ar.abdullahbasfar"},
+  {name:"ناصر القطامي", folder:"Nasser_Alqatami_128kbps"},
+  {name:"فارس عباد", folder:"Fares_Abbad_64kbps"},
+  {name:"سعد الغامدي", folder:"Ghamadi_40kbps"},
+  {name:"خالد القحطاني", folder:"Khaalid_Abdullaah_al-Qahtaanee_192kbps"},
+  {name:"عبد الله عواد الجهني", folder:"Abdullaah_3awwaad_Al-Juhaynee_128kbps"},
+  {name:"محسن القاسم", folder:"Muhsin_Al_Qasim_192kbps"},
+  {name:"علي جابر", folder:"Ali_Jaber_64kbps"},
+  {name:"ياسر سلامة", folder:"Yaser_Salamah_128kbps"},
+  {name:"محمد الطبلاوي", folder:"Mohammad_al_Tablaway_128kbps"},
+  {name:"أكرم العلاقمي", folder:"Akram_AlAlaqimy_128kbps"}
+];
+const RTL_LANGS = ["ar","ur","fa","ps","ug","he","dv","ku","sd"];
+const ISTIADHA = "أَعُوذُ بِٱللَّهِ مِنَ ٱلشَّيْطَٰنِ ٱلرَّجِيمِ";
+const BASMALA_FALLBACK = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
+const SAMPLE = [{kind:"ayah", num:25, verse:"قَالَ رَبِّ ٱشْرَحْ لِى صَدْرِى", tafsir:"قال موسى: رب وسِّع لي صدري", trans:"[Moses] said, \"My Lord, expand for me my breast [with assurance]\"", start:0, end:3}];
+
+/* ---------------- الإعدادات ---------------- */
+const DEFAULTS = {
+  surah:20, from:25, to:36, audioMode:"reciter", reciter:0, customFolder:"", addBasmala:false,
+  hasIstiadha:false, hasBasmala:false,
+  showTafsir:true, showTrans:true, showNumber:true, fade:true,
+  tafsir:"ar.muyassar", customTafsir:"", trans:"en.sahih",
+  aspect:"16:9", position:"center",
+  cBg:"#000000", cVerse:"#ffffff", cTafsir:"#ffe500", cTrans:"#e6e6e6",
+  fVerse:"Amiri Quran", fTafsir:"Tajawal", fTrans:"Poppins",
+  sVerse:88, sTafsir:42, sTrans:34, gap:3, quality:"1080", monitor:true
+};
+let S = Object.assign({}, DEFAULTS);
+try { const saved = JSON.parse(localStorage.getItem("qc_settings")||"null"); if (saved && typeof saved==="object") for (const k in DEFAULTS) if (k in saved && typeof saved[k]===typeof DEFAULTS[k]) S[k]=saved[k]; } catch(e){}
+function saveSettings(){ try{ localStorage.setItem("qc_settings", JSON.stringify(S)); }catch(e){} }
+
+/* ---------------- أدوات ---------------- */
+const $ = id => document.getElementById(id);
+const AR_DIGITS = "٠١٢٣٤٥٦٧٨٩";
+const toAr = n => String(n).replace(/\d/g, d => AR_DIGITS[d]);
+const pad3 = n => String(n).padStart(3,"0");
+const fmt = t => { t=Math.max(0,t||0); const m=Math.floor(t/60), s=Math.floor(t%60); return m+":"+String(s).padStart(2,"0"); };
+const clamp = (v,a,b)=>Math.min(b,Math.max(a,v));
+function setStatus(msg, cls){ const el=$("status"); el.textContent=msg||""; el.className="status"+(cls?" "+cls:""); }
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+async function fetchWithRetry(url, type, tries=3){
+  let lastErr;
+  for (let i=0;i<tries;i++){
+    const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), 30000);
+    try{
+      const r = await fetch(url, {signal:ctrl.signal});
+      clearTimeout(to);
+      if (!r.ok) throw new Error("HTTP "+r.status);
+      return type==="json" ? await r.json() : await r.arrayBuffer();
+    }catch(e){ clearTimeout(to); lastErr=e; if (String(e).includes("404")) break; await sleep(600*(i+1)); }
+  }
+  throw lastErr;
+}
+
+/* ---------------- الصوت ---------------- */
+let actx = null;
+function getCtx(){
+  if (!actx){ const C = window.AudioContext||window.webkitAudioContext; actx = new C(); }
+  if (actx.state==="suspended") actx.resume().catch(()=>{});
+  return actx;
+}
+function decode(buf){
+  const ctx = getCtx();
+  return new Promise((res,rej)=>{
+    try{ const p = ctx.decodeAudioData(buf, res, rej); if (p && p.then) p.then(res,rej); }catch(e){ rej(e); }
+  });
+}
+
+/* ---------------- جلب النصوص ---------------- */
+const textCache = new Map();
+function cleanText(t){ return String(t||"").replace(/﻿/g,"").replace(/\s+/g," ").trim(); }
+async function loadSurahText(surah){
+  const eds = ["quran-uthmani"];
+  if (S.tafsir!=="custom") eds.push(S.tafsir);
+  eds.push(S.trans);
+  const key = surah+"|"+eds.join(",");
+  if (textCache.has(key)) return textCache.get(key);
+  let json = null;
+  try { const c = localStorage.getItem("qc_t_"+key); if (c) json = JSON.parse(c); } catch(e){}
+  if (!json){
+    json = await fetchWithRetry("https://api.alquran.cloud/v1/surah/"+surah+"/editions/"+eds.join(","), "json");
+    if (!json || json.code!==200 || !Array.isArray(json.data)) throw new Error("bad data");
+    try { localStorage.setItem("qc_t_"+key, JSON.stringify(json)); } catch(e){ try{ for (const k of Object.keys(localStorage)) if (k.startsWith("qc_t_")) localStorage.removeItem(k); }catch(_){} }
+  }
+  const byEd = {};
+  for (const d of json.data) byEd[d.edition.identifier] = d.ayahs;
+  const q = byEd["quran-uthmani"];
+  if (!q) throw new Error("no quran text");
+  let basmala = BASMALA_FALLBACK;
+  const ayahs = q.map((a,i)=>{
+    let text = cleanText(a.text);
+    if (surah!==1 && a.numberInSurah===1 && text.startsWith("بِسْمِ")){
+      const w = text.split(" "); basmala = w.slice(0,4).join(" "); text = w.slice(4).join(" ") || text;
+    }
+    const tf = S.tafsir!=="custom" && byEd[S.tafsir] ? cleanText(byEd[S.tafsir][i] && byEd[S.tafsir][i].text) : "";
+    const tr = byEd[S.trans] ? cleanText(byEd[S.trans][i] && byEd[S.trans][i].text) : "";
+    return {num:a.numberInSurah, global:a.number, verse:text, tafsir:tf, trans:tr};
+  });
+  const out = {ayahs, basmala};
+  textCache.set(key, out);
+  return out;
+}
+
+/* ---------------- تجهيز المشروع ---------------- */
+const audioCache = new Map();
+let project = null;      // {items, plan, total, key}
+let uploadBuf = null;    // AudioBuffer للملف المرفوع
+let uploadName = "";
+let segments = [];       // [{kind, idx, start, end}]
+
+function rangeAyahs(txt){
+  const n = AYAH_COUNTS[S.surah-1];
+  const a = clamp(S.from,1,n), b = clamp(S.to,a,n);
+  return txt.ayahs.slice(a-1, b);
+}
+function customTafsirLines(){ return S.customTafsir.split(/\r?\n/).map(s=>s.trim()); }
+function buildItemTexts(list){
+  const lines = customTafsirLines();
+  return list.map((a,i)=>({kind:"ayah", num:a.num, global:a.global, verse:a.verse, tafsir: S.tafsir==="custom" ? (lines[i]||"") : a.tafsir, trans:a.trans}));
+}
+function projectKey(){
+  return JSON.stringify([S.surah,S.from,S.to,S.audioMode,S.reciter,S.customFolder,S.addBasmala,S.tafsir,S.customTafsir,S.trans,S.gap, S.audioMode==="upload"?[uploadName,segments.map(s=>[s.start,s.end])]:0]);
+}
+async function altAudioUrls(edition, surah){
+  const key = "alt|"+edition+"|"+surah;
+  if (textCache.has(key)) return textCache.get(key);
+  const j = await fetchWithRetry("https://api.alquran.cloud/v1/surah/"+surah+"/"+edition, "json");
+  const urls = {}; for (const a of j.data.ayahs) urls[a.numberInSurah] = [a.audio].concat(a.audioSecondary||[]);
+  textCache.set(key, urls); return urls;
+}
+async function loadAyahAudio(surah, ayah){
+  const rec = RECITERS[S.reciter] || RECITERS[0];
+  const folder = (S.customFolder||"").trim() || rec.folder;
+  const url = "https://everyayah.com/data/"+folder+"/"+pad3(surah)+pad3(ayah)+".mp3";
+  if (audioCache.has(url)) return audioCache.get(url);
+  let buf;
+  try { buf = await decode(await fetchWithRetry(url, "buf", 2)); }
+  catch(e){
+    if (!rec.alt || (S.customFolder||"").trim()) throw e;
+    const urls = await altAudioUrls(rec.alt, surah);
+    let ok = false;
+    for (const u of (urls[ayah]||[])){ try{ buf = await decode(await fetchWithRetry(u,"buf",2)); ok=true; break; }catch(_){} }
+    if (!ok) throw e;
+  }
+  audioCache.set(url, buf);
+  return buf;
+}
+
+let preparing = null;
+async function prepare(){
+  const key = projectKey();
+  if (project && project.key===key) return project;
+  if (preparing && preparing.key===key) return preparing.p;
+  const p = (async ()=>{
+    setStatus("جاري جلب الآيات والتفسير…");
+    const txt = await loadSurahText(S.surah);
+    const list = buildItemTexts(rangeAyahs(txt));
+    if (!list.length) throw new Error("لا توجد آيات");
+    let items=[], plan=[], total=0;
+    if (S.audioMode==="reciter"){
+      const jobs = [];
+      if (S.addBasmala && S.surah!==1 && S.surah!==9) jobs.push({kind:"basmala", verse:txt.basmala, tafsir:"", trans:"", s:1, a:1});
+      for (const it of list) jobs.push(Object.assign({}, it, {s:S.surah, a:it.num}));
+      const bufs = new Array(jobs.length); let done=0, next=0;
+      const worker = async ()=>{ while(next<jobs.length){ const i=next++; bufs[i]=await loadAyahAudio(jobs[i].s, jobs[i].a); done++; setStatus("جاري تحميل التلاوة… "+done+" / "+jobs.length); } };
+      await Promise.all([worker(),worker(),worker(),worker()]);
+      let t = 0.4; const gap = S.gap/10;
+      jobs.forEach((j,i)=>{ const b=bufs[i]; plan.push({buffer:b, at:t, offset:0, dur:b.duration}); items.push({kind:j.kind, num:j.kind==="ayah"?j.num:null, verse:j.verse, tafsir:j.tafsir, trans:j.trans, start:t, end:t+b.duration}); t += b.duration + gap; });
+      total = t - gap + 0.7;
+    } else {
+      if (!uploadBuf) throw new Error("اختر ملف الصوت أولاً");
+      if (!segments.length) throw new Error("قسّم الآيات أولاً (تلقائي أو يدوي)");
+      const extras = [];
+      if (S.hasIstiadha) extras.push({kind:"istiadha", verse:ISTIADHA, tafsir:"", trans:""});
+      if (S.hasBasmala) extras.push({kind:"basmala", verse:txt.basmala, tafsir:"", trans:""});
+      const all = extras.concat(list);
+      if (segments.length!==all.length) throw new Error("عدد المقاطع لا يطابق الآيات المختارة، أعد التقسيم");
+      const clipStart = Math.max(0, segments[0].start - 0.4);
+      const clipEnd = Math.min(uploadBuf.duration, segments[segments.length-1].end + 0.6);
+      all.forEach((it,i)=>{ items.push({kind:it.kind, num:it.kind==="ayah"?it.num:null, verse:it.verse, tafsir:it.tafsir, trans:it.trans, start:segments[i].start-clipStart, end:segments[i].end-clipStart}); });
+      total = clipEnd - clipStart;
+      plan.push({buffer:uploadBuf, at:0, offset:clipStart, dur:total});
+    }
+    project = {key, items, plan, total};
+    layoutCache.clear();
+    setStatus("جاهز ✓ — "+items.length+" مقطع، المدة "+fmt(total), "ok");
+    updateTime(0);
+    return project;
+  })();
+  preparing = {key, p};
+  try { return await p; } finally { if (preparing && preparing.p===p) preparing=null; }
+}
+
+/* ---------------- الرسم ---------------- */
+const layoutCache = new Map();
+function fontStr(weight, px, fam, fallback){ return weight+" "+Math.round(px)+"px \""+fam+"\", "+fallback; }
+function wrap(ctx, text, maxW){
+  const words = text.split(" ").filter(Boolean); const lines=[]; let cur="";
+  for (const w of words){
+    const test = cur ? cur+" "+w : w;
+    if (cur && ctx.measureText(test).width > maxW){ lines.push(cur); cur=w; } else cur=test;
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+function paginate(lines, per){ const pages=[]; for (let i=0;i<lines.length;i+=per) pages.push(lines.slice(i,i+per)); return pages.length?pages:[[]]; }
+function fitBlock(ctx, text, maxW, basePx, minRatio, maxLines, weight, fam, fallback, extraLastW){
+  if (!text) return null;
+  const doWrap = px => {
+    ctx.font = fontStr(weight, px, fam, fallback);
+    const ls = wrap(ctx, text, maxW);
+    // إذا لم تتسع علامة رقم الآية في آخر سطر، انقل الكلمة الأخيرة لسطر جديد
+    if (extraLastW && ls.length){
+      const last = ls[ls.length-1];
+      if (ctx.measureText(last).width + extraLastW(px) > maxW){
+        const w = last.split(" ");
+        if (w.length > 1){ ls[ls.length-1] = w.slice(0,-1).join(" "); ls.push(w[w.length-1]); }
+      }
+    }
+    return ls;
+  };
+  let px = basePx, lines;
+  for (let k=0;k<12;k++){
+    lines = doWrap(px);
+    if (lines.length <= maxLines || px <= basePx*minRatio) break;
+    px *= 0.9;
+  }
+  lines = doWrap(px);
+  return {px, pages: paginate(lines, maxLines), font: ctx.font};
+}
+function getLayout(ctx, item, W, H){
+  const key = [item.verse.length, item.num, item.kind, item.start, W, H, S.fVerse,S.fTafsir,S.fTrans,S.sVerse,S.sTafsir,S.sTrans,S.showTafsir,S.showTrans,S.showNumber, item.tafsir.length, item.trans.length].join("|");
+  let L = layoutCache.get(key); if (L) return L;
+  const unit = Math.min(W,H)/1080;
+  const portrait = H > W*1.2;
+  const maxW = W * (portrait ? 0.88 : 0.84);
+  const markerW = px => S.showNumber && item.num ? px*1.15 : 0;
+  ctx.direction = "rtl";
+  const verse = fitBlock(ctx, item.verse, maxW, S.sVerse*unit, 0.65, portrait?5:3, "normal", S.fVerse, "\"Amiri\", serif", markerW);
+  const tafsir = S.showTafsir && item.tafsir ? fitBlock(ctx, item.tafsir, maxW, S.sTafsir*unit, 0.75, portrait?5:3, "bold", S.fTafsir, "\"Tajawal\", sans-serif") : null;
+  const lang = (S.trans||"en").split(".")[0];
+  const transRtl = RTL_LANGS.includes(lang);
+  let trans = null;
+  if (S.showTrans && item.trans){
+    ctx.direction = transRtl ? "rtl" : "ltr";
+    trans = fitBlock(ctx, item.trans, maxW, S.sTrans*unit, 0.75, portrait?5:3, "500", transRtl ? "Noto Naskh Arabic" : S.fTrans, "sans-serif");
+  }
+  L = {verse, tafsir, trans, transRtl, unit};
+  layoutCache.set(key, L);
+  return L;
+}
+function drawMarker(ctx, cx, cy, r, num, color){
+  ctx.save();
+  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineCap="round";
+  ctx.lineWidth = Math.max(1, r*0.09);
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke();
+  ctx.lineWidth = Math.max(1, r*0.05);
+  ctx.beginPath(); ctx.arc(cx, cy, r*0.8, 0, Math.PI*2); ctx.stroke();
+  // زخرفة علوية (تاج صغير)
+  ctx.lineWidth = Math.max(1, r*0.07);
+  for (const dx of [-0.32, 0, 0.32]){
+    ctx.beginPath(); ctx.arc(cx + dx*r*0.9, cy - r*1.2 + Math.abs(dx)*r*0.12, r*0.11, 0, Math.PI*2); ctx.stroke();
+  }
+  // زخرفة جانبية
+  for (const side of [-1,1]){
+    ctx.beginPath();
+    ctx.moveTo(cx + side*r*1.0, cy - r*0.35);
+    ctx.quadraticCurveTo(cx + side*r*1.32, cy, cx + side*r*1.0, cy + r*0.35);
+    ctx.stroke();
+  }
+  ctx.direction="ltr"; ctx.textAlign="center"; ctx.textBaseline="middle";
+  const digits = toAr(num);
+  const fpx = r * (digits.length>2 ? 0.78 : 0.98);
+  ctx.font = "bold "+Math.round(fpx)+"px \"Amiri\", \"Noto Naskh Arabic\", serif";
+  ctx.fillText(digits, cx, cy + r*0.06);
+  ctx.restore();
+}
+function pageAt(block, frac){ if (!block) return null; const n = block.pages.length; return block.pages[Math.min(n-1, Math.floor(frac*n))]; }
+function drawFrame(ctx, W, H, t, items, total){
+  ctx.save();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = S.cBg; ctx.fillRect(0,0,W,H);
+  if (!items || !items.length){ ctx.restore(); return; }
+  let i = -1;
+  for (let k=0;k<items.length;k++){ if (t >= items[k].start - 0.001) i=k; else break; }
+  if (i<0) i = 0;
+  const it = items[i];
+  const showFrom = i===0 ? 0 : it.start;
+  const showTo = i+1<items.length ? items[i+1].start : total;
+  let alpha = 1;
+  if (S.fade){
+    const fd = 0.28;
+    alpha = clamp(Math.min((t - showFrom)/fd, (showTo - t)/fd), 0, 1);
+  }
+  const L = getLayout(ctx, it, W, H);
+  const span = Math.max(0.01, showTo - it.start);
+  const frac = clamp((t - it.start)/span, 0, 0.9999);
+  const vLines = pageAt(L.verse, frac) || [];
+  const isLastVersePage = L.verse ? (L.verse.pages.indexOf(vLines) === L.verse.pages.length-1) : true;
+  const tLines = pageAt(L.tafsir, frac) || [];
+  const trLines = pageAt(L.trans, frac) || [];
+  const u = L.unit;
+  const vLH = L.verse ? L.verse.px*1.85 : 0;
+  const tLH = L.tafsir ? L.tafsir.px*1.55 : 0;
+  const trLH = L.trans ? L.trans.px*1.45 : 0;
+  const gapV = 26*u, gapT = 18*u;
+  let blockH = vLines.length*vLH + (tLines.length? gapV + tLines.length*tLH : 0) + (trLines.length? gapT + trLines.length*trLH : 0);
+  let y;
+  if (S.position==="top") y = H*0.08;
+  else if (S.position==="bottom") y = H*0.92 - blockH;
+  else y = (H - blockH)/2;
+  ctx.globalAlpha = alpha;
+  ctx.textBaseline = "middle";
+  // الآية
+  if (L.verse){
+    ctx.font = L.verse.font; ctx.fillStyle = S.cVerse; ctx.direction="rtl";
+    vLines.forEach((line, li)=>{
+      const cy = y + vLH*(li+0.5);
+      const withMarker = S.showNumber && it.num && isLastVersePage && li===vLines.length-1;
+      if (withMarker){
+        const lw = ctx.measureText(line).width;
+        const r = L.verse.px*0.42, gap = L.verse.px*0.3;
+        const gw = lw + gap + r*2;
+        const right = W/2 + gw/2;
+        ctx.textAlign = "right";
+        ctx.fillText(line, right, cy);
+        drawMarker(ctx, right - lw - gap - r, cy + L.verse.px*0.04, r, it.num, S.cVerse);
+        ctx.font = L.verse.font; ctx.fillStyle = S.cVerse; ctx.direction="rtl";
+      } else {
+        ctx.textAlign = "center"; ctx.fillText(line, W/2, cy);
+      }
+    });
+    y += vLines.length*vLH;
+  }
+  if (tLines.length){
+    y += gapV;
+    ctx.font = L.tafsir.font; ctx.fillStyle = S.cTafsir; ctx.direction="rtl"; ctx.textAlign="center";
+    tLines.forEach((line, li)=> ctx.fillText(line, W/2, y + tLH*(li+0.5)));
+    y += tLines.length*tLH;
+  }
+  if (trLines.length){
+    y += gapT;
+    ctx.font = L.trans.font; ctx.fillStyle = S.cTrans; ctx.direction = L.transRtl?"rtl":"ltr"; ctx.textAlign="center";
+    trLines.forEach((line, li)=> ctx.fillText(line, W/2, y + trLH*(li+0.5)));
+  }
+  ctx.restore();
+}
+
+/* ---------------- المقاسات ---------------- */
+function dims(kind){
+  const q = kind==="preview" ? 540 : (S.quality==="720"?720:1080);
+  if (S.aspect==="9:16") return [q, Math.round(q*16/9/2)*2];
+  if (S.aspect==="1:1") return [q, q];
+  return [Math.round(q*16/9/2)*2, q];
+}
+const pv = $("preview"), pctx = pv.getContext("2d");
+function sizePreview(){ const [w,h]=dims("preview"); if (pv.width!==w||pv.height!==h){ pv.width=w; pv.height=h; } }
+
+/* ---------------- الخطوط ---------------- */
+async function ensureFonts(){
+  if (!document.fonts || !document.fonts.load) return;
+  const fams = [[S.fVerse,"normal"],[S.fTafsir,"bold"],[S.fTrans,"500"],["Amiri","bold"],["Noto Naskh Arabic","500"]];
+  const sample = "بسم الله الرحمن الرحيم Abc ١٢٣";
+  try { await Promise.race([Promise.all(fams.map(([f,w])=>document.fonts.load(w+" 40px \""+f+"\"", sample))), sleep(4000)]); } catch(e){}
+}
+
+/* ---------------- المعاينة ---------------- */
+let playing = null; // {sources, t0, raf}
+let seekPos = 0;
+function stopSources(list){ for (const s of list||[]) { try{s.stop();}catch(e){} try{s.disconnect();}catch(e){} } }
+function startPlan(ctx, plan, from, when, dest){
+  const srcs = [];
+  for (const p of plan){
+    if (p.at + p.dur <= from) continue;
+    const s = ctx.createBufferSource(); s.buffer = p.buffer;
+    for (const d of dest) s.connect(d);
+    const skip = Math.max(0, from - p.at);
+    const startWhen = when + Math.max(0, p.at - from);
+    s.start(startWhen, p.offset + skip, Math.max(0.01, p.dur - skip));
+    srcs.push(s);
+  }
+  return srcs;
+}
+function updateTime(t){
+  const tot = project ? project.total : 0;
+  $("timeLbl").textContent = fmt(t)+" / "+fmt(tot);
+  if (!seekDragging) $("seek").value = tot ? Math.round(t/tot*1000) : 0;
+}
+function renderStill(){
+  sizePreview();
+  const items = project ? project.items : SAMPLE;
+  const total = project ? project.total : 3;
+  const t = project ? (seekPos > 0 ? seekPos : Math.min(total, project.items[0].start + 0.5)) : 1;
+  drawFrame(pctx, pv.width, pv.height, t, items, total);
+}
+async function togglePlay(){
+  if (playing){ stopPreview(); return; }
+  if (exporting) return;
+  const ctx = getCtx();
+  $("playBtn").disabled = true;
+  try{
+    await ensureFonts();
+    const pr = await prepare();
+    if (seekPos >= pr.total - 0.05) seekPos = 0;
+    sizePreview();
+    const when = ctx.currentTime + 0.12;
+    const srcs = startPlan(ctx, pr.plan, seekPos, when, [ctx.destination]);
+    playing = {srcs, when, from:seekPos};
+    $("playBtn").textContent = "❚❚";
+    const loop = ()=>{
+      if (!playing) return;
+      const t = playing.from + (ctx.currentTime - playing.when);
+      if (t >= pr.total){ seekPos = 0; stopPreview(); return; }
+      drawFrame(pctx, pv.width, pv.height, Math.max(0,t), pr.items, pr.total);
+      updateTime(Math.max(0,t));
+      playing.raf = requestAnimationFrame(loop);
+    };
+    loop();
+  }catch(e){ showError(e); }
+  finally{ $("playBtn").disabled = false; }
+}
+function stopPreview(){
+  if (!playing) return;
+  const ctx = getCtx();
+  seekPos = clamp(playing.from + (ctx.currentTime - playing.when), 0, project?project.total:0);
+  if (seekPos >= (project?project.total:0) - 0.05) seekPos = 0;
+  cancelAnimationFrame(playing.raf); stopSources(playing.srcs); playing = null;
+  $("playBtn").textContent = "▶";
+  renderStill(); updateTime(seekPos);
+}
+function invalidate(){
+  if (playing) stopPreview();
+  project = null; layoutCache.clear(); seekPos = 0;
+  renderStill(); updateTime(0);
+}
+function showError(e){
+  console.error(e);
+  const m = String(e && e.message || e);
+  let msg;
+  if (/Failed to fetch|NetworkError|Load failed|abort|HTTP 5/i.test(m)) msg = "تعذّر الاتصال بالإنترنت أو بالموقع. تأكد من الاتصال وحاول مرة أخرى.";
+  else if (/HTTP 404/.test(m)) msg = "لم أجد تلاوة هذا القارئ لهذه الآيات. جرّب قارئاً آخر.";
+  else if (/decode|EncodingError|Unable to decode/i.test(m)) msg = "تعذّر قراءة الصوت. جرّب قارئاً آخر أو ملفاً بصيغة MP3 أو MP4.";
+  else msg = m;
+  setStatus("⚠️ "+msg, "err");
+}
+
+let seekDragging = false;
+$("seek").addEventListener("input", ()=>{
+  seekDragging = true;
+  if (!project) return;
+  seekPos = $("seek").value/1000 * project.total;
+  if (!playing){ drawFrame(pctx, pv.width, pv.height, seekPos, project.items, project.total); $("timeLbl").textContent = fmt(seekPos)+" / "+fmt(project.total); }
+});
+$("seek").addEventListener("change", ()=>{
+  seekDragging = false;
+  if (!project) return;
+  seekPos = $("seek").value/1000 * project.total;
+  if (playing){ stopPreview(); seekPos = $("seek").value/1000 * project.total; togglePlay(); }
+});
+$("playBtn").addEventListener("click", togglePlay);
+
+/* ---------------- التصدير ---------------- */
+let exporting = null;
+function pickMime(){
+  const list = ["video/mp4;codecs=avc1.640028,mp4a.40.2","video/mp4;codecs=avc1.4d002a,mp4a.40.2","video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4;codecs=avc1,mp4a","video/mp4;codecs=avc1,opus","video/mp4;codecs=avc1","video/mp4","video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"];
+  if (!window.MediaRecorder) return null;
+  for (const m of list){ try{ if (MediaRecorder.isTypeSupported(m)) return m; }catch(e){} }
+  return "";
+}
+async function doExport(){
+  if (exporting) return;
+  if (playing) stopPreview();
+  const mime = pickMime();
+  const testCanvas = document.createElement("canvas");
+  if (mime===null || !testCanvas.captureStream){ setStatus("⚠️ متصفحك لا يدعم صناعة الفيديو. استخدم Chrome أو Safari حديثاً.", "err"); return; }
+  const ctx = getCtx();
+  $("exportBtn").disabled = true; $("resultBox").style.display="none";
+  try{
+    await ensureFonts();
+    const pr = await prepare();
+    const [W,H] = dims("export");
+    const cv = document.createElement("canvas"); cv.width=W; cv.height=H;
+    cv.style.cssText = "position:fixed;left:-99999px;top:0;width:10px;height:10px;opacity:0;pointer-events:none";
+    document.body.appendChild(cv);
+    const c2 = cv.getContext("2d");
+    drawFrame(c2, W, H, 0, pr.items, pr.total);
+    const vStream = cv.captureStream(30);
+    const dest = ctx.createMediaStreamDestination();
+    const stream = new MediaStream([...vStream.getVideoTracks(), ...dest.stream.getAudioTracks()]);
+    const opts = {videoBitsPerSecond: S.quality==="720" ? 5_000_000 : 9_000_000, audioBitsPerSecond: 192000};
+    if (mime) opts.mimeType = mime;
+    let rec;
+    try { rec = new MediaRecorder(stream, opts); } catch(e){ rec = new MediaRecorder(stream); }
+    const chunks = [];
+    rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    const stopped = new Promise(res => rec.onstop = res);
+    const outs = [dest]; if (S.monitor) outs.push(ctx.destination);
+    exporting = {rec, cancelled:false, srcs:[]};
+    $("cancelBtn").style.display="block";
+    setStatus("جاري صناعة الفيديو… لا تغلق الصفحة");
+    rec.start(1000);
+    await sleep(150);
+    const when = ctx.currentTime + 0.25;
+    exporting.srcs = startPlan(ctx, pr.plan, 0, when, outs);
+    sizePreview();
+    await new Promise(resolve=>{
+      let iv;
+      const tick = ()=>{
+        if (!exporting || exporting.cancelled){ clearInterval(iv); resolve(); return; }
+        const t = ctx.currentTime - when;
+        drawFrame(c2, W, H, clamp(t,0,pr.total), pr.items, pr.total);
+        pctx.drawImage(cv, 0, 0, pv.width, pv.height);
+        const pc = clamp(t/pr.total,0,1);
+        $("prog").style.width = (pc*100).toFixed(1)+"%";
+        updateTime(clamp(t,0,pr.total));
+        if (t >= pr.total + 0.15){ clearInterval(iv); resolve(); }
+      };
+      iv = setInterval(tick, 1000/30);
+    });
+    const cancelled = exporting.cancelled;
+    try{ rec.stop(); }catch(e){}
+    await stopped;
+    stopSources(exporting.srcs);
+    vStream.getTracks().forEach(t=>t.stop());
+    cv.remove();
+    exporting = null;
+    if (cancelled){ setStatus("تم الإيقاف."); $("prog").style.width="0%"; return; }
+    const type = (rec.mimeType || mime || "video/webm").split(";")[0];
+    const blob = new Blob(chunks, {type});
+    if (!blob.size) throw new Error("خرج الفيديو فارغاً، حاول مرة أخرى.");
+    const ext = type.includes("mp4") ? "mp4" : "webm";
+    const name = "قرآن-كروما-"+SURAH_NAMES[S.surah-1].replace(/\s/g,"-")+"-"+S.from+"-"+S.to+"."+ext;
+    const url = URL.createObjectURL(blob);
+    $("resultVideo").src = url;
+    const a = $("downloadLink"); a.href = url; a.download = name;
+    $("resultInfo").textContent = "الصيغة: "+ext.toUpperCase()+" · الحجم: "+(blob.size/1048576).toFixed(1)+" ميغابايت · "+W+"×"+H + (ext==="webm" ? " — ملاحظة: صيغة WebM قد لا يقبلها بعض برامج المونتاج، والأفضل استخدام Chrome حديثاً على الحاسوب لتخرج MP4." : "");
+    $("resultBox").style.display="block";
+    const file = new File([blob], name, {type});
+    if (window.QCBridge){
+      // داخل تطبيق الأندرويد: الحفظ في معرض الصور
+      a.textContent = "💾 حفظ الفيديو في المعرض";
+      $("shareBtn").style.display="none";
+      a.onclick = async ev=>{
+        ev.preventDefault();
+        if (a.dataset.busy) return; a.dataset.busy="1";
+        try{
+          const where = await saveViaBridge(blob, name, type);
+          setStatus("تم حفظ الفيديو ✓ "+where, "ok");
+          $("shareBtn").style.display="block";
+          $("shareBtn").onclick = ()=>{ try{ QCBridge.share(); }catch(e){} };
+        }catch(e){ console.error(e); setStatus("⚠️ تعذّر حفظ الفيديو، حاول مرة أخرى.", "err"); }
+        finally{ delete a.dataset.busy; }
+      };
+    } else if (navigator.canShare && navigator.canShare({files:[file]})){
+      $("shareBtn").style.display="block";
+      $("shareBtn").onclick = ()=> navigator.share({files:[file], title:name}).catch(()=>{});
+    } else $("shareBtn").style.display="none";
+    $("prog").style.width="100%";
+    setStatus("تم صناعة الفيديو ✓ اضغط «تحميل الفيديو»", "ok");
+    seekPos = 0; renderStill();
+  }catch(e){
+    if (exporting){ stopSources(exporting.srcs); try{exporting.rec.stop();}catch(_){} exporting=null; }
+    showError(e);
+  }finally{
+    $("exportBtn").disabled = false; $("cancelBtn").style.display="none";
+  }
+}
+async function saveViaBridge(blob, name, type){
+  if (!QCBridge.begin(name, type)) throw new Error("save-begin");
+  const CH = 786432; // من مضاعفات 3 حتى لا ينقطع ترميز base64
+  for (let o=0; o<blob.size; o+=CH){
+    const buf = new Uint8Array(await blob.slice(o, o+CH).arrayBuffer());
+    let s = ""; for (let i=0;i<buf.length;i+=32768) s += String.fromCharCode.apply(null, buf.subarray(i,i+32768));
+    if (!QCBridge.chunk(btoa(s))) throw new Error("save-chunk");
+    setStatus("جاري الحفظ… "+Math.round(Math.min(1,(o+CH)/blob.size)*100)+"%");
+    await sleep(0);
+  }
+  return QCBridge.finish();
+}
+$("exportBtn").addEventListener("click", doExport);
+$("cancelBtn").addEventListener("click", ()=>{ if (exporting) exporting.cancelled = true; });
+
+/* ---------------- رفع الصوت والتقسيم ---------------- */
+function segmentLabels(){
+  const labels = [];
+  if (S.hasIstiadha) labels.push({kind:"istiadha", label:"الاستعاذة"});
+  if (S.hasBasmala) labels.push({kind:"basmala", label:"البسملة"});
+  const n = AYAH_COUNTS[S.surah-1];
+  const a = clamp(S.from,1,n), b = clamp(S.to,a,n);
+  for (let k=a;k<=b;k++) labels.push({kind:"ayah", label:"آية "+toAr(k), num:k});
+  return labels;
+}
+$("audioFile").addEventListener("change", async e=>{
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  setStatus("جاري استخراج الصوت من الملف…");
+  $("autoSplitBtn").disabled = true; $("tapSyncBtn").disabled = true;
+  try{
+    if (f.size > 400*1048576) setStatus("الملف كبير، قد يأخذ وقتاً…");
+    const buf = await f.arrayBuffer();
+    uploadBuf = await decode(buf);
+    uploadName = f.name+"|"+f.size;
+    segments = [];
+    $("fileInfo").textContent = "✓ "+f.name+" — المدة "+fmt(uploadBuf.duration);
+    $("autoSplitBtn").disabled = false; $("tapSyncBtn").disabled = false;
+    renderSegList(); invalidate();
+    setStatus("تم استخراج الصوت ✓ الآن اضغط «تقسيم الآيات تلقائياً»", "ok");
+  }catch(err){
+    uploadBuf = null;
+    setStatus("⚠️ تعذّر استخراج الصوت من هذا الملف. جرّب ملف MP3 أو MP4.", "err");
+    console.error(err);
+  }
+  e.target.value = "";
+});
+
+/* تحليل الوقفات: يعيد مستويات الصوت كل 20 ملّي ثانية */
+function analyzeEnergy(buf){
+  const sr = buf.sampleRate, hop = Math.round(sr*0.02), n = Math.floor(buf.length/hop);
+  const chs = []; for (let c=0;c<buf.numberOfChannels;c++) chs.push(buf.getChannelData(c));
+  const db = new Float32Array(n);
+  for (let i=0;i<n;i++){
+    let sum=0; const s0=i*hop;
+    for (let j=0;j<hop;j++){ let v=0; for (const ch of chs) v+=ch[s0+j]; v/=chs.length; sum+=v*v; }
+    db[i] = 10*Math.log10(sum/hop + 1e-12);
+  }
+  // تنعيم بسيط
+  const sm = new Float32Array(n);
+  for (let i=0;i<n;i++){ let s=0,c=0; for (let k=-2;k<=2;k++){ const j=i+k; if (j>=0&&j<n){s+=db[j];c++;} } sm[i]=s/c; }
+  return {db:sm, hopSec:0.02};
+}
+function autoSplit(buf, texts){
+  const {db, hopSec} = analyzeEnergy(buf);
+  const sorted = Array.from(db).sort((a,b)=>a-b);
+  const pct = p => sorted[Math.min(sorted.length-1, Math.floor(p*sorted.length))];
+  const floor = pct(0.08), loud = pct(0.92);
+  const thr = floor + (loud-floor)*0.32;
+  const silent = Array.from(db, v => v < thr);
+  let first = silent.indexOf(false); if (first<0) first=0;
+  let last = silent.lastIndexOf(false); if (last<0) last=db.length-1;
+  const speechStart = first*hopSec, speechEnd = (last+1)*hopSec;
+  // الوقفات
+  const gaps = [];
+  let i = first;
+  while (i <= last){
+    if (silent[i]){ let j=i; while (j<=last && silent[j]) j++; const len=(j-i)*hopSec; if (len >= 0.18) gaps.push({s:i*hopSec, e:j*hopSec, len, mid:(i+j)/2*hopSec}); i=j; } else i++;
+  }
+  const N = texts.length, K = N-1;
+  const span = Math.max(0.1, speechEnd - speechStart);
+  // التوقع حسب طول نص كل آية
+  const w = texts.map(t => Math.max(4, t.replace(/[ً-ٰٟۖ-ۭ\s]/g,"").length));
+  const tw = w.reduce((a,b)=>a+b,0);
+  const expected = []; let acc=0;
+  for (let k=0;k<K;k++){ acc += w[k]; expected.push(speechStart + span*acc/tw); }
+  let bounds;
+  if (K <= 0) bounds = [];
+  else if (gaps.length < K){
+    bounds = expected.slice();
+    // الصق بأقرب وقفة إن وجدت
+    const used = new Set();
+    bounds = bounds.map(x=>{ let best=-1, bd=1e9; gaps.forEach((g,gi)=>{ const d=Math.abs(g.mid-x); if(!used.has(gi)&&d<bd){bd=d;best=gi;} }); if (best>=0 && bd < span/N*0.5){ used.add(best); return gaps[best].e - Math.min(0.12, gaps[best].len/3); } return x; });
+    bounds.sort((a,b)=>a-b);
+  } else {
+    const M = gaps.length, avg = span/N;
+    const maxLen = Math.max(...gaps.map(g=>g.len));
+    const score = (k,g)=>{ const ls = Math.min(gaps[g].len/Math.max(0.6, maxLen*0.6), 1.4); const d=(gaps[g].mid-expected[k])/avg; return ls*1.6 - d*d*0.9; };
+    const NEG = -1e18;
+    const dp = Array.from({length:K}, ()=>new Float64Array(M).fill(NEG));
+    const bk = Array.from({length:K}, ()=>new Int32Array(M).fill(-1));
+    for (let g=0; g<M; g++) dp[0][g] = score(0,g);
+    for (let k=1;k<K;k++){
+      let best=NEG, bi=-1;
+      for (let g=0; g<M; g++){
+        if (g>0 && dp[k-1][g-1] > best){ best = dp[k-1][g-1]; bi = g-1; }
+        if (bi>=0) { dp[k][g] = best + score(k,g); bk[k][g] = bi; }
+      }
+    }
+    let bg=-1, bv=NEG; for (let g=0; g<M; g++) if (dp[K-1][g]>bv){ bv=dp[K-1][g]; bg=g; }
+    const chosen = new Array(K);
+    for (let k=K-1;k>=0;k--){ chosen[k]=bg; bg = bk[k][bg]; }
+    bounds = chosen.map(g => gaps[g].e - Math.min(0.12, gaps[g].len/3));
+  }
+  const starts = [Math.max(0, speechStart-0.08)].concat(bounds);
+  const out = [];
+  for (let k=0;k<N;k++){
+    const st = starts[k];
+    const en = k+1<N ? starts[k+1] : Math.min(buf.duration, speechEnd+0.1);
+    out.push({start:+st.toFixed(2), end:+Math.max(st+0.2,en).toFixed(2)});
+  }
+  return out;
+}
+$("autoSplitBtn").addEventListener("click", async ()=>{
+  if (!uploadBuf) return;
+  $("autoSplitBtn").disabled = true;
+  setStatus("جاري تحليل التلاوة وتقسيم الآيات…");
+  try{
+    await sleep(30);
+    const txt = await loadSurahText(S.surah);
+    const labels = segmentLabels();
+    const list = rangeAyahs(txt);
+    const texts = labels.map(l => l.kind==="istiadha" ? ISTIADHA : l.kind==="basmala" ? txt.basmala : (list.find(a=>a.num===l.num)||{verse:""}).verse);
+    const res = autoSplit(uploadBuf, texts);
+    segments = labels.map((l,i)=>({kind:l.kind, label:l.label, start:res[i].start, end:res[i].end}));
+    renderSegList(); invalidate();
+    await prepare();
+    setStatus("تم التقسيم ✓ اضغط ▶ للمعاينة، وعدّل الأوقات إن لزم.", "ok");
+  }catch(e){ showError(e); }
+  finally{ $("autoSplitBtn").disabled = !uploadBuf; }
+});
+function renderSegList(){
+  const box = $("segList"); box.innerHTML = "";
+  if (!segments.length) return;
+  segments.forEach((s,i)=>{
+    const row = document.createElement("div"); row.className="segRow";
+    row.innerHTML = '<span class="lbl"></span><input type="number" step="0.05" min="0" aria-label="بداية"><input type="number" step="0.05" min="0" aria-label="نهاية"><button title="سماع">▶</button>';
+    row.querySelector(".lbl").textContent = s.label;
+    const [a,b] = row.querySelectorAll("input");
+    a.value = s.start; b.value = s.end;
+    a.addEventListener("change", ()=>{ const v=parseFloat(a.value); if (!isNaN(v)){ s.start=Math.max(0,v); if (i>0 && segments[i-1].end > s.start) { segments[i-1].end = s.start; } renderSegList(); invalidate(); } });
+    b.addEventListener("change", ()=>{ const v=parseFloat(b.value); if (!isNaN(v)){ s.end=Math.max(s.start+0.1,v); if (i+1<segments.length && segments[i+1].start < s.end) { segments[i+1].start = s.end; } renderSegList(); invalidate(); } });
+    row.querySelector("button").addEventListener("click", ()=> playSnippet(s.start, s.end));
+    box.appendChild(row);
+  });
+  const hdr = document.createElement("div"); hdr.className="hint"; hdr.textContent = "المقطع · البداية · النهاية (بالثواني)";
+  box.prepend(hdr);
+}
+let snippetSrc = null;
+function playSnippet(a,b){
+  if (!uploadBuf) return;
+  const ctx = getCtx();
+  if (snippetSrc){ try{snippetSrc.stop();}catch(e){} }
+  snippetSrc = ctx.createBufferSource(); snippetSrc.buffer = uploadBuf; snippetSrc.connect(ctx.destination);
+  snippetSrc.start(0, a, Math.max(0.1,b-a));
+}
+
+/* ضبط يدوي بالنقر */
+let tap = null;
+$("tapSyncBtn").addEventListener("click", async ()=>{
+  if (!uploadBuf) return;
+  try{
+    const txt = await loadSurahText(S.surah);
+    const labels = segmentLabels(); const list = rangeAyahs(txt);
+    const texts = labels.map(l => l.kind==="istiadha" ? ISTIADHA : l.kind==="basmala" ? txt.basmala : (list.find(a=>a.num===l.num)||{verse:""}).verse);
+    if (playing) stopPreview();
+    tap = {labels, texts, times:[], src:null, t0:0, idx:0};
+    $("tapStep").textContent = "اضغط «ابدأ» لتشغيل التلاوة";
+    $("tapText").textContent = texts[0]||"";
+    $("tapBtn").textContent = "ابدأ";
+    $("tapOverlay").classList.add("show");
+  }catch(e){ showError(e); }
+});
+$("tapBtn").addEventListener("click", ()=>{
+  if (!tap) return;
+  const ctx = getCtx();
+  if (!tap.src){
+    tap.src = ctx.createBufferSource(); tap.src.buffer = uploadBuf; tap.src.connect(ctx.destination);
+    tap.t0 = ctx.currentTime + 0.05; tap.src.start(tap.t0);
+    tap.src.onended = ()=>{ if (tap) finishTap(); };
+    $("tapBtn").textContent = "بدأت الآية ←";
+    $("tapStep").textContent = "اضغط عندما يبدأ: "+tap.labels[0].label;
+    return;
+  }
+  const t = Math.max(0, ctx.currentTime - tap.t0 - 0.12); // تعويض زمن رد الفعل
+  tap.times.push(t);
+  tap.idx = tap.times.length;
+  if (tap.idx >= tap.labels.length){
+    $("tapStep").textContent = "آخر مقطع — اضغط «انتهى» عندما ينتهي القارئ";
+    $("tapText").textContent = tap.texts[tap.labels.length-1]||"";
+    $("tapBtn").textContent = "✓";
+  } else {
+    $("tapStep").textContent = "الحالي: "+tap.labels[tap.idx-1].label+" — اضغط عندما يبدأ: "+tap.labels[tap.idx].label;
+    $("tapText").textContent = tap.texts[tap.idx-1]||"";
+  }
+});
+function finishTap(){
+  if (!tap) return;
+  const ctx = getCtx();
+  const endT = tap.src ? Math.min(uploadBuf.duration, ctx.currentTime - tap.t0) : 0;
+  if (tap.src){ tap.src.onended=null; try{tap.src.stop();}catch(e){} }
+  const L = tap.labels.length;
+  if (tap.times.length === L){
+    segments = tap.labels.map((l,i)=>({kind:l.kind, label:l.label, start:+tap.times[i].toFixed(2), end:+(i+1<L ? tap.times[i+1] : Math.max(tap.times[i]+0.3, endT)).toFixed(2)}));
+    renderSegList(); invalidate();
+    prepare().then(()=>setStatus("تم الضبط اليدوي ✓ اضغط ▶ للمعاينة","ok")).catch(showError);
+  } else if (tap.times.length){
+    setStatus("⚠️ لم تكتمل كل الآيات ("+tap.times.length+" من "+L+"). أعد الضبط حتى النهاية.", "err");
+  }
+  tap = null;
+  $("tapOverlay").classList.remove("show");
+}
+$("tapEnd").addEventListener("click", finishTap);
+$("tapCancel").addEventListener("click", ()=>{ if (tap && tap.src){ tap.src.onended=null; try{tap.src.stop();}catch(e){} } tap=null; $("tapOverlay").classList.remove("show"); });
+
+/* ---------------- المفضلة ---------------- */
+function loadFavs(){ try{ const f = JSON.parse(localStorage.getItem("qc_favs")||"[]"); return Array.isArray(f)?f:[]; }catch(e){ return []; } }
+function saveFavs(f){ try{ localStorage.setItem("qc_favs", JSON.stringify(f)); }catch(e){} }
+function renderFavs(){
+  const box = $("favList"); box.innerHTML="";
+  const favs = loadFavs();
+  if (!favs.length){ box.innerHTML = '<div class="hint">لا توجد مفضلة بعد.</div>'; return; }
+  favs.forEach((f,i)=>{
+    const row = document.createElement("div"); row.className="favItem";
+    const t = document.createElement("div"); t.className="t";
+    t.textContent = "⭐ سورة "+SURAH_NAMES[f.surah-1]+" ("+toAr(f.from)+"–"+toAr(f.to)+")"+(f.reciterName?" · "+f.reciterName:"");
+    const open = document.createElement("button"); open.textContent="فتح";
+    open.onclick = ()=>{ Object.assign(S, {surah:f.surah, from:f.from, to:f.to}); if (typeof f.reciter==="number") S.reciter=f.reciter; saveSettings(); syncUI(); invalidate(); showTab("p-ayat"); setStatus("تم فتح المفضلة ✓","ok"); };
+    const del = document.createElement("button"); del.textContent="حذف";
+    del.onclick = ()=>{ const ff=loadFavs(); ff.splice(i,1); saveFavs(ff); renderFavs(); };
+    row.append(t, open, del); box.appendChild(row);
+  });
+}
+$("addFav").addEventListener("click", ()=>{
+  const favs = loadFavs();
+  const rec = RECITERS[S.reciter];
+  if (favs.some(f=>f.surah===S.surah&&f.from===S.from&&f.to===S.to&&f.reciter===S.reciter)){ setStatus("هذا الاختيار موجود في المفضلة.","ok"); return; }
+  favs.unshift({surah:S.surah, from:S.from, to:S.to, reciter:S.reciter, reciterName: S.audioMode==="reciter"&&rec?rec.name:""});
+  saveFavs(favs.slice(0,100)); renderFavs(); setStatus("أُضيف إلى المفضلة ⭐","ok");
+});
+
+/* ---------------- ربط الواجهة ---------------- */
+function showTab(id){
+  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active", p.id===id));
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on", b.dataset.p===id));
+  if (id==="p-fav") renderFavs();
+}
+document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click", ()=>showTab(b.dataset.p)));
+
+function bindSeg(id, key, after){
+  const el = $(id);
+  el.querySelectorAll("button").forEach(b=>b.addEventListener("click", ()=>{
+    S[key] = b.dataset.v; saveSettings();
+    el.querySelectorAll("button").forEach(x=>x.classList.toggle("on", x===b));
+    after && after();
+  }));
+}
+function syncSeg(id, val){ $(id).querySelectorAll("button").forEach(x=>x.classList.toggle("on", x.dataset.v===val)); }
+
+function fillSurahs(){
+  const sel = $("surah");
+  sel.innerHTML = SURAH_NAMES.map((n,i)=>'<option value="'+(i+1)+'">'+toAr(i+1)+". "+n+" ("+toAr(AYAH_COUNTS[i])+" آية)</option>").join("");
+  $("reciter").innerHTML = RECITERS.map((r,i)=>'<option value="'+i+'">'+r.name+'</option>').join("");
+}
+function syncUI(){
+  $("surah").value = S.surah;
+  const n = AYAH_COUNTS[S.surah-1];
+  S.from = clamp(S.from|0,1,n); S.to = clamp(S.to|0,S.from,n);
+  $("fromAyah").max = n; $("toAyah").max = n;
+  $("fromAyah").value = S.from; $("toAyah").value = S.to;
+  $("reciter").value = S.reciter; $("customFolder").value = S.customFolder;
+  $("addBasmala").checked = S.addBasmala; $("hasIstiadha").checked = S.hasIstiadha; $("hasBasmala").checked = S.hasBasmala;
+  syncSeg("audioMode", S.audioMode);
+  $("reciterBox").style.display = S.audioMode==="reciter" ? "" : "none";
+  $("uploadBox").style.display = S.audioMode==="upload" ? "" : "none";
+  document.querySelectorAll("[data-toggle]").forEach(c=>c.classList.toggle("on", !!S[c.dataset.toggle]));
+  $("tafsirSel").value = S.tafsir; $("customTafsirBox").style.display = S.tafsir==="custom" ? "" : "none";
+  $("customTafsir").value = S.customTafsir;
+  $("transSel").value = S.trans;
+  syncSeg("aspect", S.aspect); syncSeg("position", S.position); syncSeg("quality", S.quality);
+  for (const k of ["cBg","cVerse","cTafsir","cTrans"]) $(k).value = S[k];
+  document.querySelectorAll("#bgPresets .preset").forEach(p=>p.classList.toggle("on", p.dataset.c.toLowerCase()===S.cBg.toLowerCase()));
+  for (const k of ["fVerse","fTafsir","fTrans"]) $(k).value = S[k];
+  for (const k of ["sVerse","sTafsir","sTrans"]) { $(k).value = S[k]; $(k+"V").textContent = S[k]; }
+  $("gap").value = S.gap; $("gapV").textContent = (S.gap/10).toFixed(1);
+  $("monitor").checked = S.monitor;
+}
+function onRangeChange(){
+  if (S.audioMode==="upload" && segments.length){ segments=[]; renderSegList(); setStatus("تغيّرت الآيات، أعد تقسيم الصوت.", ""); }
+  invalidate();
+}
+$("surah").addEventListener("change", ()=>{ S.surah = +$("surah").value; S.from = 1; S.to = Math.min(AYAH_COUNTS[S.surah-1], 10); saveSettings(); syncUI(); onRangeChange(); });
+$("fromAyah").addEventListener("change", ()=>{ const n=AYAH_COUNTS[S.surah-1]; S.from = clamp(parseInt($("fromAyah").value)||1,1,n); if (S.to<S.from) S.to=S.from; saveSettings(); syncUI(); onRangeChange(); });
+$("toAyah").addEventListener("change", ()=>{ const n=AYAH_COUNTS[S.surah-1]; S.to = clamp(parseInt($("toAyah").value)||S.from,1,n); if (S.to<S.from) S.from=S.to; saveSettings(); syncUI(); onRangeChange(); });
+bindSeg("audioMode","audioMode", ()=>{ syncUI(); invalidate(); });
+$("reciter").addEventListener("change", ()=>{ S.reciter = +$("reciter").value; saveSettings(); invalidate(); });
+$("customFolder").addEventListener("change", ()=>{ S.customFolder = $("customFolder").value.trim(); saveSettings(); invalidate(); });
+$("addBasmala").addEventListener("change", ()=>{ S.addBasmala = $("addBasmala").checked; saveSettings(); invalidate(); });
+$("hasIstiadha").addEventListener("change", ()=>{ S.hasIstiadha = $("hasIstiadha").checked; saveSettings(); onRangeChange(); });
+$("hasBasmala").addEventListener("change", ()=>{ S.hasBasmala = $("hasBasmala").checked; saveSettings(); onRangeChange(); });
+document.querySelectorAll("[data-toggle]").forEach(c=>c.addEventListener("click", ()=>{ const k=c.dataset.toggle; S[k]=!S[k]; c.classList.toggle("on", S[k]); saveSettings(); layoutCache.clear(); if (!playing) renderStill(); }));
+$("tafsirSel").addEventListener("change", ()=>{ S.tafsir = $("tafsirSel").value; saveSettings(); syncUI(); invalidate(); });
+$("customTafsir").addEventListener("change", ()=>{ S.customTafsir = $("customTafsir").value; saveSettings(); invalidate(); });
+$("transSel").addEventListener("change", ()=>{ S.trans = $("transSel").value; saveSettings(); invalidate(); });
+bindSeg("aspect","aspect", ()=>{ layoutCache.clear(); if (!playing) renderStill(); else sizePreview(); });
+bindSeg("position","position", ()=>{ if (!playing) renderStill(); });
+bindSeg("quality","quality");
+for (const k of ["cBg","cVerse","cTafsir","cTrans"]) $(k).addEventListener("input", ()=>{ S[k]=$(k).value; saveSettings(); if (k==="cBg") syncUI(); if (!playing) renderStill(); });
+document.querySelectorAll("#bgPresets .preset").forEach(p=>p.addEventListener("click", ()=>{ S.cBg=p.dataset.c; saveSettings(); syncUI(); if (!playing) renderStill(); }));
+$("resetColors").addEventListener("click", ()=>{ for (const k of ["cBg","cVerse","cTafsir","cTrans"]) S[k]=DEFAULTS[k]; saveSettings(); syncUI(); if (!playing) renderStill(); });
+for (const k of ["fVerse","fTafsir","fTrans"]) $(k).addEventListener("change", async ()=>{ S[k]=$(k).value; saveSettings(); layoutCache.clear(); await ensureFonts(); layoutCache.clear(); if (!playing) renderStill(); });
+for (const k of ["sVerse","sTafsir","sTrans"]) $(k).addEventListener("input", ()=>{ S[k]=+$(k).value; $(k+"V").textContent=S[k]; saveSettings(); layoutCache.clear(); if (!playing) renderStill(); });
+$("gap").addEventListener("input", ()=>{ S.gap=+$("gap").value; $("gapV").textContent=(S.gap/10).toFixed(1); saveSettings(); });
+$("gap").addEventListener("change", ()=>{ invalidate(); });
+$("monitor").addEventListener("change", ()=>{ S.monitor = $("monitor").checked; saveSettings(); });
+
+window.addEventListener("error", e=>{ console.error(e.error||e.message); });
+window.addEventListener("unhandledrejection", e=>{ console.error(e.reason); });
+document.addEventListener("visibilitychange", ()=>{ if (document.hidden && exporting) setStatus("⚠️ ارجع إلى الصفحة! صناعة الفيديو تحتاج أن تبقى الصفحة ظاهرة.", "err"); });
+
+if (!window.QCBridge) $("apkCard").style.display = "";
+fillSurahs(); syncUI(); renderStill();
+ensureFonts().then(()=>{ layoutCache.clear(); renderStill(); });
+</script>
+</body>
+</html>
