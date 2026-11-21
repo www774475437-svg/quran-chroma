@@ -193,7 +193,7 @@ footer a{color:var(--copper)}
 .sheetFoot{display:flex;gap:10px;align-items:center;padding:10px 14px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--panel)}
 .tlWrap{border:1px solid var(--line);border-radius:20px;overflow:hidden;background:#0c0b09}
 #tlCanvas{display:block;width:100%;height:170px;touch-action:none;cursor:grab}
-.tlBar{display:flex;align-items:center;gap:6px;margin-top:10px}
+.tlBar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px}
 .tlBar .btn.small{padding:10px 12px;white-space:nowrap}
 .tlTime{flex:1;text-align:center;white-space:nowrap;min-width:0;font-variant-numeric:tabular-nums;color:var(--muted);direction:ltr;font-size:14px}
 .iconGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
@@ -232,7 +232,9 @@ body{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
 <section class="stage">
   <div class="canvasWrap"><canvas id="preview" width="960" height="540"></canvas></div>
   <div class="controls">
+    <button class="btn small" id="back5" aria-label="رجوع ٥ ثوانٍ">⏪</button>
     <button class="playBtn" id="playBtn" aria-label="تشغيل">▶</button>
+    <button class="btn small" id="fwd5" aria-label="تقدّم ٥ ثوانٍ">⏩</button>
     <input type="range" class="seek" id="seek" min="0" max="1000" value="0">
     <div class="time" id="timeLbl">0:00 / 0:00</div>
   </div>
@@ -285,14 +287,16 @@ body{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
         <div class="hint" id="fileInfo">يستخرج التطبيق الصوت من الفيديو تلقائياً. اختر السورة والآيات التي يقرؤها القارئ في الملف.</div>
         <div class="switch"><span>يبدأ القارئ بالاستعاذة</span><input type="checkbox" id="hasIstiadha"></div>
         <div class="switch"><span>يبدأ القارئ بالبسملة</span><input type="checkbox" id="hasBasmala"></div>
-        <button class="btn primary" id="autoSplitBtn" disabled>✨ تقسيم الآيات تلقائياً</button>
         <button class="btn" id="tapSyncBtn" disabled>👆 ضبط يدوي بالنقر مع التلاوة</button>
-        <div class="hint">التقسيم التلقائي يعتمد على وقفات القارئ بين الآيات. إذا لم يكن دقيقاً، استعمل الضبط اليدوي أو عدّل الأوقات بالأسفل.</div>
+        <div class="hint">بعد الرفع توزَّع الآيات تلقائياً بحسب طولها. اسحب الخطوط الذهبية لضبط كل آية، أو اضغط آية في الموجة واضبطها وحدها. زر ⏪ و⏩ يرجّع ويقدّم خمس ثوانٍ.</div>
         <div id="tlBox" style="display:none">
           <label class="f">محرّر الصوت — اسحب الخطوط الذهبية لتحديد بداية كل آية ونهايتها</label>
           <div class="tlWrap"><canvas id="tlCanvas"></canvas></div>
           <div class="tlBar">
             <button class="btn small primary" id="tlPlay">▶ تشغيل</button>
+            <button class="btn small" id="tlBack" aria-label="رجوع ٥ ثوانٍ">⏪ ٥</button>
+            <button class="btn small" id="tlFwd" aria-label="تقدّم ٥ ثوانٍ">⏩ ٥</button>
+            <button class="btn small" id="tlUndo">↶ تراجع</button>
             <span class="tlTime" id="tlTime">0:00.0</span>
             <button class="btn small" id="tlOut" aria-label="تصغير">➖</button>
             <button class="btn small" id="tlIn" aria-label="تكبير">➕</button>
@@ -300,6 +304,7 @@ body{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
           </div>
           <div class="tlBar" id="tlSelBar" style="display:none">
             <span class="hint" id="tlSelInfo" style="margin:0;flex:1"></span>
+            <button class="btn small" id="tlSelPlay">▶ الآية</button>
             <button class="btn small" id="tlMinus">◀ ٠٫٠٥</button>
             <button class="btn small" id="tlHere">عند المؤشر</button>
             <button class="btn small" id="tlPlus">٠٫٠٥ ▶</button>
@@ -329,13 +334,8 @@ body{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
       <select id="tafsirSel">
         <option value="ar.muyassar">التفسير الميسر</option>
         <option value="ar.jalalayn">تفسير الجلالين</option>
-        <option value="custom">تفسير من عندي</option>
       </select>
-      <div id="customTafsirBox" style="display:none">
-        <label class="f">اكتب تفسير كل آية في سطر مستقل، بترتيب الآيات المختارة</label>
-        <textarea id="customTafsir" placeholder="السطر الأول = تفسير الآية الأولى المختارة&#10;السطر الثاني = تفسير الآية الثانية ..."></textarea>
-      </div>
-      <div class="hint">«المختصر في التفسير» غير متوفر في المصدر المجاني الذي يعتمد عليه التطبيق، وتقدر تضيفه من «تفسير من عندي».</div>
+      <div class="hint">«المختصر في التفسير» غير متوفر في المصدر المجاني الذي يعتمد عليه التطبيق.</div>
     </div>
     <div class="card">
       <h3>الترجمة</h3>
@@ -575,11 +575,11 @@ const AYAH_COUNTS = [7,286,200,176,120,165,206,75,129,109,123,111,43,52,99,128,1
 
 /* القرّاء: مجلد everyayah + (اختياري) نسخة احتياطية من alquran.cloud */
 const RECITERS = [
+  {name:"ماهر المعيقلي", folder:"MaherAlMuaiqly128kbps", alt:"ar.mahermuaiqly"},
   {name:"ياسر الدوسري", folder:"Yasser_Ad-Dussary_128kbps"},
   {name:"مشاري راشد العفاسي", folder:"Alafasy_128kbps", alt:"ar.alafasy"},
   {name:"عبد الرحمن السديس", folder:"Abdurrahmaan_As-Sudais_192kbps", alt:"ar.abdurrahmaansudais"},
   {name:"سعود الشريم", folder:"Saood_ash-Shuraym_128kbps", alt:"ar.saoodshuraym"},
-  {name:"ماهر المعيقلي", folder:"MaherAlMuaiqly128kbps", alt:"ar.mahermuaiqly"},
   {name:"عبد الباسط عبد الصمد (مرتل)", folder:"Abdul_Basit_Murattal_192kbps", alt:"ar.abdulbasitmurattal"},
   {name:"محمود خليل الحصري", folder:"Husary_128kbps", alt:"ar.husary"},
   {name:"محمد صديق المنشاوي (مرتل)", folder:"Minshawy_Murattal_128kbps", alt:"ar.minshawi"},
@@ -613,7 +613,7 @@ const DEFAULTS = {
   surah:20, from:25, to:36, audioMode:"reciter", reciter:0, customFolder:"", addBasmala:false,
   hasIstiadha:false, hasBasmala:false, pubSource:"project",
   showTafsir:true, showTrans:true, showNumber:true, fade:true,
-  tafsir:"ar.muyassar", customTafsir:"", trans:"en.sahih",
+  tafsir:"ar.muyassar", trans:"en.sahih",
   aspect:"16:9", position:"center",
   cBg:"#000000", cVerse:"#ffffff", cTafsir:"#ffe500", cTrans:"#e6e6e6",
   fVerse:"KFGQPC Hafs", fTafsir:"Tajawal", fTrans:"Poppins",
@@ -622,6 +622,7 @@ const DEFAULTS = {
 let S = Object.assign({}, DEFAULTS);
 try { const saved = JSON.parse(localStorage.getItem("qc_settings")||"null"); if (saved && typeof saved==="object") for (const k in DEFAULTS) if (k in saved && typeof saved[k]===typeof DEFAULTS[k]) S[k]=saved[k]; } catch(e){}
 try { if (localStorage.getItem("qc_v")!=="2"){ if (S.fVerse==="Amiri Quran") S.fVerse=HAFS; localStorage.setItem("qc_v","2"); } } catch(e){}
+try { if (localStorage.getItem("qc_v")!=="3"){ S.reciter=0; if (S.tafsir==="custom") S.tafsir="ar.muyassar"; localStorage.setItem("qc_v","3"); saveSettings(); } } catch(e){}
 function saveSettings(){ try{ localStorage.setItem("qc_settings", JSON.stringify(S)); }catch(e){} }
 
 /* ---------------- أدوات ---------------- */
@@ -756,7 +757,7 @@ const textCache = new Map();
 function cleanText(t){ return String(t||"").replace(/﻿/g,"").replace(/\s+/g," ").trim(); }
 async function loadSurahText(surah){
   const eds = [];
-  if (S.tafsir!=="custom") eds.push(S.tafsir);
+  eds.push(S.tafsir);
   eds.push(S.trans);
   const key = surah+"|"+eds.join(",");
   if (textCache.has(key)) return textCache.get(key);
@@ -778,7 +779,7 @@ async function loadSurahText(surah){
   const byEd = {};
   for (const d of json.data) byEd[d.edition.identifier] = d.ayahs;
   const ref = byEd[S.trans] || byEd[S.tafsir] || [];
-  const tfAll = S.tafsir!=="custom" && byEd[S.tafsir] ? splitGroupedTafsir(quran.map((_,i)=> cleanText(byEd[S.tafsir][i] && byEd[S.tafsir][i].text)), quran) : null;
+  const tfAll = byEd[S.tafsir] ? splitGroupedTafsir(quran.map((_,i)=> cleanText(byEd[S.tafsir][i] && byEd[S.tafsir][i].text)), quran) : null;
   const ayahs = quran.map((t,i)=>{
     const tf = tfAll ? tfAll[i] : "";
     const tr = byEd[S.trans] ? cleanText(byEd[S.trans][i] && byEd[S.trans][i].text) : "";
@@ -841,14 +842,12 @@ function rangeAyahs(txt){
   const a = clamp(S.from,1,n), b = clamp(S.to,a,n);
   return txt.ayahs.slice(a-1, b);
 }
-function customTafsirLines(){ return S.customTafsir.split(/\r?\n/).map(s=>s.trim()); }
 function buildItemTexts(list){
-  const lines = customTafsirLines();
-  return list.map((a,i)=>({kind:"ayah", num:a.num, global:a.global, verse:a.verse, tafsir: S.tafsir==="custom" ? (lines[i]||"") : a.tafsir, trans:a.trans}));
+  return list.map(a=>({kind:"ayah", num:a.num, global:a.global, verse:a.verse, tafsir:a.tafsir, trans:a.trans}));
 }
 function projectKey(){
   if (S.pubSource==="chroma") return JSON.stringify(["chroma", chromaFileKey]);
-  return JSON.stringify([S.surah,S.from,S.to,S.audioMode,S.reciter,S.customFolder,S.addBasmala,S.tafsir,S.customTafsir,S.trans, S.audioMode==="upload"?[uploadName,segments.map(s=>[s.start,s.end])]:0]);
+  return JSON.stringify([S.surah,S.from,S.to,S.audioMode,S.reciter,S.customFolder,S.addBasmala,S.tafsir,S.trans, S.audioMode==="upload"?[uploadName,segments.map(s=>[s.start,s.end])]:0]);
 }
 async function altAudioUrls(edition, surah){
   const key = "alt|"+edition+"|"+surah;
@@ -1232,18 +1231,31 @@ function showError(e){
 }
 
 let seekDragging = false;
-$("seek").addEventListener("input", ()=>{
+/* شريط التمرير: يعمل حتى قبل التشغيل الأول، ويبقى حيث تتركه */
+$("seek").addEventListener("input", async ()=>{
   seekDragging = true;
-  if (!project) return;
-  seekPos = $("seek").value/1000 * project.total;
-  if (!playing){ drawFrame(pctx, pv.width, pv.height, seekPos, project.items, project.total); $("timeLbl").textContent = fmt(seekPos)+" / "+fmt(project.total); }
+  let pr; try{ pr = await prepare(); }catch(e){ return; }
+  if (playing) return;
+  seekPos = $("seek").value/1000 * pr.total;
+  drawFrame(pctx, pv.width, pv.height, seekPos, pr.items, pr.total);
+  $("timeLbl").textContent = fmt(seekPos)+" / "+fmt(pr.total);
 });
-$("seek").addEventListener("change", ()=>{
+$("seek").addEventListener("change", async ()=>{
   seekDragging = false;
-  if (!project) return;
-  seekPos = $("seek").value/1000 * project.total;
-  if (playing){ stopPreview(); seekPos = $("seek").value/1000 * project.total; togglePlay(); }
+  let pr; try{ pr = await prepare(); }catch(e){ showError(e); return; }
+  const p = $("seek").value/1000 * pr.total;
+  if (playing){ stopPreview(); seekPos = p; togglePlay(); }
+  else { seekPos = p; renderStill(); updateTime(p); }
 });
+async function skipBy(d){
+  const was = !!playing;
+  if (was) stopPreview();
+  let pr; try{ pr = await prepare(); }catch(e){ showError(e); return; }
+  seekPos = clamp(seekPos + d, 0, Math.max(0, pr.total - 0.05));
+  if (was) togglePlay(); else { renderStill(); updateTime(seekPos); }
+}
+$("back5").addEventListener("click", ()=> skipBy(-5));
+$("fwd5").addEventListener("click", ()=> skipBy(5));
 $("playBtn").addEventListener("click", togglePlay);
 
 /* ---------------- التصدير ---------------- */
@@ -1388,18 +1400,17 @@ function segmentLabels(){
 $("audioFile").addEventListener("change", async e=>{
   const f = e.target.files && e.target.files[0]; if (!f) return;
   setStatus("جاري استخراج الصوت من الملف…");
-  $("autoSplitBtn").disabled = true; $("tapSyncBtn").disabled = true;
+  $("tapSyncBtn").disabled = true;
   try{
     if (f.size > 400*1048576) setStatus("الملف كبير، قد يأخذ وقتاً…");
     uploadBuf = await decodeFile(f);
     uploadName = f.name+"|"+f.size;
-    segments = [];
     $("fileInfo").textContent = "✓ "+f.name+" — المدة "+fmt(uploadBuf.duration);
-    $("autoSplitBtn").disabled = false; $("tapSyncBtn").disabled = false;
+    $("tapSyncBtn").disabled = false;
+    idb("readwrite", st=>st.put(f,"file")).catch(()=>{});
     tlLoad();
-    renderSegList(); invalidate();
-    setTimeout(()=>{ if (uploadBuf && !segments.length) $("autoSplitBtn").click(); }, 50);
-    setStatus("تم استخراج الصوت ✓ الآن اضغط «تقسيم الآيات تلقائياً»", "ok");
+    await startManualSplit();
+    setStatus("تم استخراج الصوت ✓ اسحب الخطوط الذهبية لضبط كل آية", "ok");
   }catch(err){
     uploadBuf = null;
     setStatus("⚠️ تعذّر استخراج الصوت من هذا الملف. قد يكون بلا صوت أو بصيغة غير مدعومة. جرّب ملف MP3 أو M4A أو MP4.", "err");
@@ -1408,111 +1419,79 @@ $("audioFile").addEventListener("change", async e=>{
   e.target.value = "";
 });
 
-/* تحليل الوقفات: يعيد مستويات الصوت كل 20 ملّي ثانية */
-function analyzeEnergy(buf){
-  const sr = buf.sampleRate, hop = Math.round(sr*0.02), n = Math.floor(buf.length/hop);
-  const chs = []; for (let c=0;c<buf.numberOfChannels;c++) chs.push(buf.getChannelData(c));
-  const db = new Float32Array(n);
-  for (let i=0;i<n;i++){
-    let sum=0; const s0=i*hop;
-    for (let j=0;j<hop;j++){ let v=0; for (const ch of chs) v+=ch[s0+j]; v/=chs.length; sum+=v*v; }
-    db[i] = 10*Math.log10(sum/hop + 1e-12);
-  }
-  // تنعيم بسيط
-  const sm = new Float32Array(n);
-  for (let i=0;i<n;i++){ let s=0,c=0; for (let k=-2;k<=2;k++){ const j=i+k; if (j>=0&&j<n){s+=db[j];c++;} } sm[i]=s/c; }
-  return {db:sm, hopSec:0.02};
+/* ---------------- التقسيم اليدوي: توزيع أولي ثم ضبط بالخطوط ---------------- */
+const SEG_KEY = "qc_seg";
+let segRangeKey = "";
+let hist = [];
+let dragSnap = null;
+const rangeKey = () => JSON.stringify([S.surah,S.from,S.to,S.hasIstiadha,S.hasBasmala]);
+function histPush(snap){ hist.push(snap || JSON.stringify(segments)); if (hist.length > 60) hist.shift(); }
+function undoEdit(){
+  if (!hist.length){ setStatus("لا يوجد تعديل للتراجع عنه.", ""); return; }
+  segments = JSON.parse(hist.pop()); TL.sel = -1;
+  renderSegList(); invalidate(); setStatus("تم التراجع ↶", "ok");
 }
-function autoSplit(buf, texts){
-  const {db, hopSec} = analyzeEnergy(buf);
-  const sorted = Array.from(db).sort((a,b)=>a-b);
-  const pct = p => sorted[Math.min(sorted.length-1, Math.floor(p*sorted.length))];
-  const floor = pct(0.08), loud = pct(0.92);
-  const thr = floor + (loud-floor)*0.32;
-  const silent = Array.from(db, v => v < thr);
-  let first = silent.indexOf(false); if (first<0) first=0;
-  let last = silent.lastIndexOf(false); if (last<0) last=db.length-1;
-  const speechStart = first*hopSec, speechEnd = (last+1)*hopSec;
-  // الوقفات
-  const gaps = [];
-  let i = first;
-  while (i <= last){
-    if (silent[i]){ let j=i; while (j<=last && silent[j]) j++; const len=(j-i)*hopSec; if (len >= 0.18) gaps.push({s:i*hopSec, e:j*hopSec, len, mid:(i+j)/2*hopSec}); i=j; } else i++;
-  }
-  const N = texts.length, K = N-1;
-  const span = Math.max(0.1, speechEnd - speechStart);
-  // التوقع حسب طول نص كل آية
-  const w = texts.map(t => Math.max(4, t.replace(/[ً-ٰٟۖ-ۭ\s]/g,"").length));
-  const tw = w.reduce((a,b)=>a+b,0);
-  const expected = []; let acc=0;
-  for (let k=0;k<K;k++){ acc += w[k]; expected.push(speechStart + span*acc/tw); }
-  let bounds;
-  if (K <= 0) bounds = [];
-  else if (gaps.length < K){
-    bounds = expected.slice();
-    // الصق بأقرب وقفة إن وجدت
-    const used = new Set();
-    bounds = bounds.map(x=>{ let best=-1, bd=1e9; gaps.forEach((g,gi)=>{ const d=Math.abs(g.mid-x); if(!used.has(gi)&&d<bd){bd=d;best=gi;} }); if (best>=0 && bd < span/N*0.5){ used.add(best); return gaps[best].e - Math.min(0.12, gaps[best].len/3); } return x; });
-    bounds.sort((a,b)=>a-b);
-  } else {
-    const M = gaps.length, avg = span/N;
-    const maxLen = Math.max(...gaps.map(g=>g.len));
-    const score = (k,g)=>{ const ls = Math.min(gaps[g].len/Math.max(0.6, maxLen*0.6), 1.4); const d=(gaps[g].mid-expected[k])/avg; return ls*1.6 - d*d*0.9; };
-    const NEG = -1e18;
-    const dp = Array.from({length:K}, ()=>new Float64Array(M).fill(NEG));
-    const bk = Array.from({length:K}, ()=>new Int32Array(M).fill(-1));
-    for (let g=0; g<M; g++) dp[0][g] = score(0,g);
-    for (let k=1;k<K;k++){
-      let best=NEG, bi=-1;
-      for (let g=0; g<M; g++){
-        if (g>0 && dp[k-1][g-1] > best){ best = dp[k-1][g-1]; bi = g-1; }
-        if (bi>=0) { dp[k][g] = best + score(k,g); bk[k][g] = bi; }
-      }
-    }
-    let bg=-1, bv=NEG; for (let g=0; g<M; g++) if (dp[K-1][g]>bv){ bv=dp[K-1][g]; bg=g; }
-    const chosen = new Array(K);
-    for (let k=K-1;k>=0;k--){ chosen[k]=bg; bg = bk[k][bg]; }
-    bounds = chosen.map(g => gaps[g].e - Math.min(0.12, gaps[g].len/3));
-  }
-  const starts = [Math.max(0, speechStart-0.08)].concat(bounds);
-  const out = [];
-  for (let k=0;k<N;k++){
-    const st = starts[k];
-    const en = k+1<N ? starts[k+1] : Math.min(buf.duration, speechEnd+0.1);
-    out.push({start:+st.toFixed(2), end:+Math.max(st+0.2,en).toFixed(2)});
-  }
-  return out;
+async function startManualSplit(){
+  const txt = await loadSurahText(S.surah);
+  const list = rangeAyahs(txt);
+  const labels = segmentLabels();
+  const texts = labels.map(l => l.kind==="istiadha" ? ISTIADHA : l.kind==="basmala" ? txt.basmala : (list.find(a=>a.num===l.num)||{verse:""}).verse).map(stripNum);
+  const d = uploadBuf.duration, N = texts.length;
+  if (!N) return;
+  const w = texts.map(t => Math.max(4, t.replace(/[ً-ٰٟۖ-ۭ\s]/g,"").length));
+  const tw = w.reduce((x,y)=>x+y,0);
+  const bounds = [0]; let acc = 0;
+  for (let k=0;k<N-1;k++){ acc += w[k]; bounds.push(d*acc/tw); }
+  bounds.push(d);
+  histPush();
+  segments = labels.map((l,i)=>({kind:l.kind, label:l.label, start:+bounds[i].toFixed(2), end:+bounds[i+1].toFixed(2)}));
+  segRangeKey = rangeKey();
+  renderSegList(); invalidate();
 }
-$("autoSplitBtn").addEventListener("click", async ()=>{
-  if (!uploadBuf) return;
-  $("autoSplitBtn").disabled = true;
-  setStatus("جاري تحليل التلاوة وتقسيم الآيات…");
-  try{
-    await sleep(30);
-    const txt = await loadSurahText(S.surah);
-    const labels = segmentLabels();
-    const list = rangeAyahs(txt);
-    const texts = labels.map(l => l.kind==="istiadha" ? ISTIADHA : l.kind==="basmala" ? txt.basmala : (list.find(a=>a.num===l.num)||{verse:""}).verse);
-    const res = autoSplit(uploadBuf, texts.map(stripNum));
-    segments = labels.map((l,i)=>({kind:l.kind, label:l.label, start:res[i].start, end:res[i].end}));
-    renderSegList(); invalidate();
-    await prepare();
-    setStatus("تم التقسيم ✓ اضغط ▶ للمعاينة، وعدّل الأوقات إن لزم.", "ok");
-  }catch(e){ showError(e); }
-  finally{ $("autoSplitBtn").disabled = !uploadBuf; }
-});
+function persistSegs(){
+  try{ localStorage.setItem(SEG_KEY, JSON.stringify({name:uploadName, rk:segRangeKey, segs:segments})); }catch(e){}
+}
+function idb(mode, fn){
+  return new Promise((res,rej)=>{
+    const r = indexedDB.open("qc-upload", 1);
+    r.onupgradeneeded = ()=> r.result.createObjectStore("kv");
+    r.onerror = ()=> rej(r.error);
+    r.onsuccess = ()=>{
+      const db = r.result, tx = db.transaction("kv", mode), q = fn(tx.objectStore("kv"));
+      tx.oncomplete = ()=>{ db.close(); res(q ? q.result : undefined); };
+      tx.onerror = ()=>{ db.close(); rej(tx.error); };
+    };
+  });
+}
+async function restoreUpload(){
+  if (S.audioMode!=="upload") return;
+  let saved = null; try{ saved = JSON.parse(localStorage.getItem(SEG_KEY)||"null"); }catch(e){}
+  const f = await idb("readonly", st=>st.get("file")).catch(()=>null);
+  if (!f) return;
+  setStatus("جاري استعادة الصوت المحفوظ…");
+  uploadBuf = await decodeFile(f);
+  uploadName = f.name+"|"+f.size;
+  $("fileInfo").textContent = "✓ "+f.name+" — المدة "+fmt(uploadBuf.duration);
+  $("tapSyncBtn").disabled = false;
+  tlLoad();
+  if (saved && saved.name===uploadName && saved.rk===rangeKey() && Array.isArray(saved.segs) && saved.segs.length){
+    segments = saved.segs; segRangeKey = saved.rk; renderSegList(); invalidate();
+    setStatus("استُعيد مشروعك السابق ✓", "ok");
+  } else await startManualSplit();
+}
 function renderSegList(){
+  if (uploadBuf) persistSegs();
   const box = $("segList"); box.innerHTML = "";
   tlRefresh();
   if (!segments.length) return;
   segments.forEach((s,i)=>{
     const row = document.createElement("div"); row.className="segRow";
     row.innerHTML = '<span class="lbl"></span><input type="number" step="0.05" min="0" aria-label="بداية"><input type="number" step="0.05" min="0" aria-label="نهاية"><button title="سماع">▶</button>';
-    row.querySelector(".lbl").textContent = s.label;
+    row.querySelector(".lbl").textContent = s.label+" · "+tlFmt(s.start)+" — "+tlFmt(s.end);
     const [a,b] = row.querySelectorAll("input");
     a.value = s.start; b.value = s.end;
-    a.addEventListener("change", ()=>{ const v=parseFloat(a.value); if (!isNaN(v)){ s.start=Math.max(0,v); if (i>0 && segments[i-1].end > s.start) { segments[i-1].end = s.start; } renderSegList(); invalidate(); } });
-    b.addEventListener("change", ()=>{ const v=parseFloat(b.value); if (!isNaN(v)){ s.end=Math.max(s.start+0.1,v); if (i+1<segments.length && segments[i+1].start < s.end) { segments[i+1].start = s.end; } renderSegList(); invalidate(); } });
+    a.addEventListener("change", ()=>{ const v=parseFloat(a.value); if (!isNaN(v)){ histPush(); s.start=Math.max(0,v); if (i>0 && segments[i-1].end > s.start) { segments[i-1].end = s.start; } renderSegList(); invalidate(); } });
+    b.addEventListener("change", ()=>{ const v=parseFloat(b.value); if (!isNaN(v)){ histPush(); s.end=Math.max(s.start+0.1,v); if (i+1<segments.length && segments[i+1].start < s.end) { segments[i+1].start = s.end; } renderSegList(); invalidate(); } });
     row.querySelector("button").addEventListener("click", ()=> playSnippet(s.start, s.end));
     box.appendChild(row);
   });
@@ -1613,12 +1592,24 @@ function tlPlayFrom(t){
   loop();
 }
 $("tlPlay").addEventListener("click", ()=>{ if (TL.src){ tlStop(); tlDraw(); } else tlPlayFrom(TL.head); });
+$("tlBack").addEventListener("click", ()=>{ TL.head = clamp(TL.head-5, 0, uploadBuf.duration); if (TL.src) tlPlayFrom(TL.head); else tlDraw(); });
+$("tlFwd").addEventListener("click", ()=>{ TL.head = clamp(TL.head+5, 0, uploadBuf.duration); if (TL.src) tlPlayFrom(TL.head); else tlDraw(); });
+$("tlUndo").addEventListener("click", undoEdit);
+$("tlSelPlay").addEventListener("click", ()=>{ if (TL.sel<0 || !segments.length) return; const i = Math.min(TL.sel, segments.length-1); playSnippet(segments[i].start, segments[i].end); });
+function tlNudge(delta){ if (TL.sel<0 || !uploadBuf) return; histPush(); const b = tlBounds(); tlSetBound(TL.sel, b[TL.sel]+delta); tlCommit(); }
+document.addEventListener("keydown", e=>{
+  const inField = /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+  if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="z" && !inField){ e.preventDefault(); undoEdit(); return; }
+  if (inField || !uploadBuf || TL.sel<0) return;
+  if (e.key==="ArrowLeft"){ e.preventDefault(); tlNudge(e.shiftKey ? -0.01 : -0.05); }
+  else if (e.key==="ArrowRight"){ e.preventDefault(); tlNudge(e.shiftKey ? 0.01 : 0.05); }
+});
 $("tlIn").addEventListener("click", ()=> tlZoom(0.5, clamp(TL.head, TL.v0, TL.v1)));
 $("tlOut").addEventListener("click", ()=> tlZoom(2, (TL.v0+TL.v1)/2));
 $("tlAll").addEventListener("click", ()=> tlView(0, uploadBuf.duration));
-$("tlMinus").addEventListener("click", ()=>{ const b=tlBounds(); if (TL.sel>=0){ tlSetBound(TL.sel, b[TL.sel]-0.05); tlCommit(); } });
-$("tlPlus").addEventListener("click", ()=>{ const b=tlBounds(); if (TL.sel>=0){ tlSetBound(TL.sel, b[TL.sel]+0.05); tlCommit(); } });
-$("tlHere").addEventListener("click", ()=>{ if (TL.sel>=0){ tlSetBound(TL.sel, TL.head); tlCommit(); } });
+$("tlMinus").addEventListener("click", ()=>{ const b=tlBounds(); if (TL.sel>=0){ histPush(); tlSetBound(TL.sel, b[TL.sel]-0.05); tlCommit(); } });
+$("tlPlus").addEventListener("click", ()=>{ const b=tlBounds(); if (TL.sel>=0){ histPush(); tlSetBound(TL.sel, b[TL.sel]+0.05); tlCommit(); } });
+$("tlHere").addEventListener("click", ()=>{ if (TL.sel>=0){ histPush(); tlSetBound(TL.sel, TL.head); tlCommit(); } });
 (function(){
   const pts = new Map(); let mode = "", moved = 0, pinch0 = 0, span0 = 0, ctr0 = 0, lastX = 0;
   const px = e => e.clientX - tlc.getBoundingClientRect().left;
@@ -1628,7 +1619,7 @@ $("tlHere").addEventListener("click", ()=>{ if (TL.sel>=0){ tlSetBound(TL.sel, T
     if (pts.size === 2){ const [a,b] = [...pts.values()]; mode = "pinch"; pinch0 = Math.abs(a-b)||1; span0 = TL.v1-TL.v0; ctr0 = tlT((a+b)/2); return; }
     const bnd = tlBounds(); let best = -1, bd = 22;
     bnd.forEach((t,i)=>{ const d = Math.abs(tlX(t)-lastX); if (d < bd){ bd = d; best = i; } });
-    if (best >= 0){ mode = "handle"; TL.sel = best; tlc.style.cursor = "ew-resize"; } else { mode = "pan"; tlc.style.cursor = "grabbing"; }
+    if (best >= 0){ mode = "handle"; TL.sel = best; dragSnap = JSON.stringify(segments); tlc.style.cursor = "ew-resize"; } else { mode = "pan"; tlc.style.cursor = "grabbing"; }
     tlDraw();
   });
   tlc.addEventListener("pointermove", e=>{
@@ -1640,7 +1631,7 @@ $("tlHere").addEventListener("click", ()=>{ if (TL.sel>=0){ tlSetBound(TL.sel, T
   });
   const up = e=>{
     if (!pts.has(e.pointerId)) return; pts.delete(e.pointerId); tlc.style.cursor = "grab";
-    if (mode === "handle"){ if (moved > 0) tlCommit(); else tlDraw(); }
+    if (mode === "handle"){ if (moved > 0){ histPush(dragSnap); tlCommit(); } else tlDraw(); }
     else if (mode === "pan" && moved <= 6){ TL.head = clamp(tlT(lastX), 0, uploadBuf.duration); TL.sel = -1; if (TL.src) tlPlayFrom(TL.head); else tlDraw(); }
     if (pts.size === 0) mode = "";
   };
@@ -1698,6 +1689,7 @@ function finishTap(){
   if (tap.src){ tap.src.onended=null; try{tap.src.stop();}catch(e){} }
   const L = tap.labels.length;
   if (tap.times.length === L){
+    histPush();
     segments = tap.labels.map((l,i)=>({kind:l.kind, label:l.label, start:+tap.times[i].toFixed(2), end:+(i+1<L ? tap.times[i+1] : Math.max(tap.times[i]+0.3, endT)).toFixed(2)}));
     renderSegList(); invalidate();
     prepare().then(()=>setStatus("تم الضبط اليدوي ✓ اضغط ▶ للمعاينة","ok")).catch(showError);
@@ -2057,8 +2049,7 @@ function syncUI(){
   $("reciterBox").style.display = S.audioMode==="reciter" ? "" : "none";
   $("uploadBox").style.display = S.audioMode==="upload" ? "" : "none";
   document.querySelectorAll("[data-toggle]").forEach(c=>c.classList.toggle("on", !!S[c.dataset.toggle]));
-  $("tafsirSel").value = S.tafsir; $("customTafsirBox").style.display = S.tafsir==="custom" ? "" : "none";
-  $("customTafsir").value = S.customTafsir;
+  $("tafsirSel").value = S.tafsir;
   $("transSel").value = S.trans;
   syncSeg("aspect", S.aspect); syncSeg("position", S.position); syncSeg("quality", S.quality);
   for (const k of ["cBg","cVerse","cTafsir","cTrans"]) $(k).value = S[k];
@@ -2071,7 +2062,7 @@ function syncUI(){
   syncBgInputs();
 }
 function onRangeChange(){
-  if (S.audioMode==="upload" && segments.length){ segments=[]; renderSegList(); setStatus("تغيّرت الآيات، أعد تقسيم الصوت.", ""); }
+  if (S.audioMode==="upload" && uploadBuf && segRangeKey!==rangeKey()){ startManualSplit().catch(showError); setStatus("تغيّرت الآيات، وُزّعت من جديد — اضبطها بالخطوط.", ""); }
   invalidate();
 }
 $("surah").addEventListener("change", ()=>{ S.surah = +$("surah").value; S.from = 1; S.to = Math.min(AYAH_COUNTS[S.surah-1], 10); saveSettings(); syncUI(); onRangeChange(); });
@@ -2085,7 +2076,6 @@ $("hasIstiadha").addEventListener("change", ()=>{ S.hasIstiadha = $("hasIstiadha
 $("hasBasmala").addEventListener("change", ()=>{ S.hasBasmala = $("hasBasmala").checked; saveSettings(); onRangeChange(); });
 document.querySelectorAll("[data-toggle]").forEach(c=>c.addEventListener("click", ()=>{ const k=c.dataset.toggle; S[k]=!S[k]; c.classList.toggle("on", S[k]); saveSettings(); layoutCache.clear(); if (!playing) renderStill(); }));
 $("tafsirSel").addEventListener("change", ()=>{ S.tafsir = $("tafsirSel").value; saveSettings(); syncUI(); invalidate(); });
-$("customTafsir").addEventListener("change", ()=>{ S.customTafsir = $("customTafsir").value; saveSettings(); invalidate(); });
 $("transSel").addEventListener("change", ()=>{ S.trans = $("transSel").value; saveSettings(); invalidate(); });
 bindSeg("aspect","aspect", ()=>{ syncUI(); layoutCache.clear(); if (!playing) renderStill(); else sizePreview(); });
 bindSeg("pubAspect","aspect", ()=>{ syncUI(); layoutCache.clear(); if (!playing) renderStill(); else sizePreview(); });
@@ -2105,6 +2095,7 @@ document.addEventListener("visibilitychange", ()=>{ if (document.hidden && expor
 
 if (!window.QCBridge) $("apkCard").style.display = "";
 fillSurahs(); syncUI(); renderStill();
+restoreUpload().catch(()=>setStatus("تعذّر استعادة الصوت المحفوظ، ارفعه من جديد.", "err"));
 ensureFonts().then(()=>{ layoutCache.clear(); renderStill(); });
 </script>
 </body>
