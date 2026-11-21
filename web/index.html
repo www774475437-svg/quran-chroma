@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b0d0c">
+<meta name="theme-color" content="#12110e">
 <title>القرآن كروما</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
@@ -119,6 +119,68 @@ video.result{width:100%;border-radius:12px;margin-top:10px;background:#000}
 }
 footer{text-align:center;font-size:12px;color:var(--muted);padding:10px 0 20px}
 footer a{color:var(--accent)}
+
+/* ====== المظهر الجديد (على نمط «منتقيات الشعر») ====== */
+:root{
+  --bg:#12110e; --panel:#1e1b17; --panel2:#29251f; --line:#35302a; --text:#f2eadd; --muted:#a59c8e;
+  --accent:#b38b3f; --accent2:#7fc79a; --copper:#d9955f; --danger:#ff7a6b; --onaccent:#fffaf0;
+}
+html{scroll-behavior:smooth}
+body{padding-bottom:calc(108px + env(safe-area-inset-bottom));-webkit-font-smoothing:antialiased}
+button,.btn,.chip,select,input,textarea,.preset,.card,nav.tabs button{transition:background-color .22s ease,color .22s ease,border-color .22s ease,transform .15s ease,box-shadow .22s ease,opacity .22s ease}
+button:active,.btn:active,.chip:active,.preset:active{transform:scale(.97)}
+header{padding:calc(14px + env(safe-area-inset-top)) 18px 10px}
+header h1{font-size:23px;cursor:default;user-select:none;-webkit-user-select:none}
+header h1 span{color:var(--copper)}
+header a{color:var(--copper);border-color:var(--line);background:var(--panel);padding:9px 14px;font-weight:700}
+.stage{padding:8px 14px 10px;border-bottom:none;box-shadow:0 10px 18px -14px rgba(0,0,0,.9)}
+.canvasWrap{border-radius:24px}
+.playBtn{width:52px;height:52px;background:var(--accent);color:var(--onaccent);box-shadow:0 6px 18px -6px rgba(179,139,63,.7)}
+.status.ok{color:var(--accent2)}
+main{padding:12px 14px}
+.panel.active{animation:panelIn .28s ease}
+@keyframes panelIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card{border-radius:26px;padding:18px;margin-bottom:14px}
+.card h3{font-size:18px;font-weight:800;color:var(--text);margin-bottom:12px}
+label.f{font-size:13.5px;margin:12px 0 6px}
+select,input[type=number],input[type=text],textarea{border-radius:16px;padding:13px 14px;font-size:16px}
+select:focus,input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+.seg{border-radius:999px;padding:4px;gap:4px}
+.seg button{border-radius:999px;padding:11px 8px;font-weight:700}
+.seg button.on{background:var(--accent);color:var(--onaccent)}
+.chip{padding:10px 18px;font-weight:700}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--onaccent)}
+.btn{border-radius:999px;padding:15px 18px;font-weight:800;margin-top:12px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--onaccent);box-shadow:0 8px 22px -10px rgba(179,139,63,.8)}
+.btn.green{background:var(--accent2);border-color:var(--accent2);color:#10261a}
+.btn.small{border-radius:999px;padding:10px 16px}
+.hint{font-size:13px;line-height:1.8}
+.colors label{border-radius:16px;padding:9px 12px}
+.preset{width:42px;height:42px;border-radius:14px}
+.preset.on{border-color:var(--copper)}
+input[type=range]{accent-color:var(--accent)}
+.switch{padding:11px 0;font-size:15px}
+.switch input{width:24px;height:24px;accent-color:var(--accent)}
+.progress{height:12px}
+.segRow button,.favItem button{border-radius:999px;padding:7px 14px}
+.segRow input{border-radius:12px}
+.stat{border-radius:22px}
+.overlay .tapBtn{border-radius:32px;background:var(--accent);color:var(--onaccent)}
+details summary{list-style:none}
+footer a{color:var(--copper)}
+/* شريط الأقسام العائم */
+nav.tabs{left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));padding:6px;border:1px solid var(--line);border-radius:999px;background:rgba(36,33,29,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 14px 34px -10px rgba(0,0,0,.85)}
+nav.tabs button{border-radius:999px;padding:9px 2px 8px;font-size:12px;font-weight:700}
+nav.tabs button.on{color:var(--copper);background:rgba(0,0,0,.32)}
+@media (min-width:600px){ nav.tabs{left:50%;right:auto;transform:translateX(-50%);width:min(560px,92vw)} }
+@media (min-width:980px){
+  body{padding-bottom:0}
+  .stage{border-radius:28px;padding:16px;box-shadow:none}
+  main{padding:0}
+  nav.tabs{left:auto;right:auto;bottom:auto;transform:none;width:auto;border-radius:999px;padding:5px;box-shadow:none;margin-bottom:14px}
+  nav.tabs button{padding:11px 4px}
+  nav.tabs button.on{background:var(--panel2)}
+}
 </style>
 </head>
 <body>
