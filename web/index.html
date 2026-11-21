@@ -165,6 +165,7 @@ footer a{color:var(--accent)}
         <label class="f">القارئ</label>
         <select id="reciter"></select>
         <div class="switch"><span>إضافة البسملة في البداية</span><input type="checkbox" id="addBasmala"></div>
+        <div class="hint" style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0">💡 تلاوات القائمة مسجَّلة آيةً آية. إذا أردت صوتاً متصلاً واضحاً بلا أي انقطاع بين الآيات، اختر «صوت أو فيديو من عندي» وارفع تلاوة القارئ من ملفاتك.</div>
         <details>
           <summary class="hint" style="cursor:pointer">قارئ غير موجود في القائمة؟</summary>
           <label class="f">اسم مجلد القارئ في موقع everyayah.com (اختياري)</label>
@@ -519,6 +520,95 @@ function decode(buf){
   });
 }
 
+/* استخراج الصوت من ملف صوت أو فيديو، مع طريقة احتياطية لفيديوهات الجوال (MP4/MOV) */
+async function decodeFile(file){
+  let firstErr = null;
+  if (file.size <= 350*1048576){
+    try { return await decode(await file.arrayBuffer()); } catch(e){ firstErr = e; }
+  }
+  try {
+    const adts = await demuxAac(file);
+    return await decode(adts.buffer);
+  } catch(e){ console.warn("demux failed", e); throw firstErr || e; }
+}
+async function demuxAac(file){
+  const rd = async (a,b)=> new DataView(await file.slice(a,b).arrayBuffer());
+  const fourcc = (dv,o)=> String.fromCharCode(dv.getUint8(o),dv.getUint8(o+1),dv.getUint8(o+2),dv.getUint8(o+3));
+  // ابحث عن صندوق moov
+  let pos = 0, moov = null;
+  while (pos + 8 <= file.size){
+    const h = await rd(pos, Math.min(file.size, pos+16));
+    let size = h.getUint32(0), hdr = 8; const type = fourcc(h,4);
+    if (size===1 && h.byteLength>=16){ size = h.getUint32(8)*4294967296 + h.getUint32(12); hdr = 16; }
+    else if (size===0) size = file.size - pos;
+    if (size < hdr) break;
+    if (type==="moov"){ moov = await rd(pos+hdr, pos+size); break; }
+    pos += size;
+  }
+  if (!moov) throw new Error("no moov");
+  const kids = (dv, a, b)=>{ const out=[]; let p=a;
+    while (p+8<=b){ let sz=dv.getUint32(p), hd=8; const t=fourcc(dv,p+4);
+      if (sz===1){ sz=dv.getUint32(p+8)*4294967296+dv.getUint32(p+12); hd=16; } else if (sz===0) sz=b-p;
+      if (sz<hd || p+sz>b) break; out.push({t, a:p+hd, b:p+sz}); p+=sz; }
+    return out; };
+  const find = (list,t)=> list.find(x=>x.t===t);
+  let tk = null;
+  for (const trak of kids(moov,0,moov.byteLength).filter(x=>x.t==="trak")){
+    const mdia = find(kids(moov,trak.a,trak.b),"mdia"); if (!mdia) continue;
+    const mk = kids(moov,mdia.a,mdia.b);
+    const hdlr = find(mk,"hdlr"); if (!hdlr || fourcc(moov,hdlr.a+8)!=="soun") continue;
+    const minf = find(mk,"minf"); if (!minf) continue;
+    const stbl = find(kids(moov,minf.a,minf.b),"stbl"); if (!stbl) continue;
+    const sk = kids(moov,stbl.a,stbl.b);
+    const stsd = find(sk,"stsd"); if (!stsd || fourcc(moov,stsd.a+12)!=="mp4a") continue;
+    const mdhd = find(mk,"mdhd");
+    const ts = mdhd ? moov.getUint32(mdhd.a + (moov.getUint8(mdhd.a)===1 ? 20 : 12)) : 44100;
+    tk = {stsd, stsc:find(sk,"stsc"), stsz:find(sk,"stsz"), stco:find(sk,"stco"), co64:find(sk,"co64"), ts};
+    break;
+  }
+  if (!tk || !tk.stsc || !tk.stsz || !(tk.stco||tk.co64)) throw new Error("no aac track");
+  // إعدادات AAC من esds
+  const FREQ = [96000,88200,64000,48000,44100,32000,24000,22050,16000,12000,11025,8000,7350];
+  let aot = 2, fi = FREQ.indexOf(tk.ts), ch = 2;
+  for (let p=tk.stsd.a; p+4<tk.stsd.b; p++){
+    if (fourcc(moov,p)!=="esds") continue;
+    let q = p+8;
+    const len = ()=>{ let n=0; for (let k=0;k<4;k++){ const c=moov.getUint8(q++); n=(n<<7)|(c&127); if (!(c&128)) break; } return n; };
+    if (moov.getUint8(q++)===3){ len(); q+=2; const fl=moov.getUint8(q++); if (fl&128) q+=2; if (fl&64) q+=1+moov.getUint8(q); if (fl&32) q+=2;
+      if (moov.getUint8(q++)===4){ len(); q+=13;
+        if (moov.getUint8(q++)===5){ const n=len(); if (n>=2){ const b0=moov.getUint8(q), b1=moov.getUint8(q+1); const A=b0>>3, F=((b0&7)<<1)|(b1>>7), C=(b1>>3)&15; if (A>0 && A<5) aot=A; if (F<13) fi=F; if (C>0 && C<8) ch=C; } } } }
+    break;
+  }
+  if (fi<0) fi = 4;
+  // جداول العيّنات
+  const nS = moov.getUint32(tk.stsz.a+8), fixed = moov.getUint32(tk.stsz.a+4);
+  const sizeOf = i => fixed || moov.getUint32(tk.stsz.a+12+i*4);
+  const nC = tk.stco ? moov.getUint32(tk.stco.a+4) : moov.getUint32(tk.co64.a+4);
+  const chunkOff = i => tk.stco ? moov.getUint32(tk.stco.a+8+i*4) : moov.getUint32(tk.co64.a+8+i*8)*4294967296 + moov.getUint32(tk.co64.a+12+i*8);
+  const nE = moov.getUint32(tk.stsc.a+4); const stsc = [];
+  for (let i=0;i<nE;i++) stsc.push([moov.getUint32(tk.stsc.a+8+i*12), moov.getUint32(tk.stsc.a+12+i*12)]);
+  let total = 0; for (let i=0;i<nS;i++) total += sizeOf(i) + 7;
+  if (!nS || total > 700*1048576) throw new Error("bad audio track");
+  const out = new Uint8Array(total); let o = 0, si = 0, e = 0;
+  for (let c=0; c<nC && si<nS; c++){
+    while (e+1<nE && stsc[e+1][0] <= c+1) e++;
+    const cnt = Math.min(stsc[e][1], nS-si);
+    let bytes = 0; for (let k=0;k<cnt;k++) bytes += sizeOf(si+k);
+    const off = chunkOff(c);
+    const data = new Uint8Array(await file.slice(off, off+bytes).arrayBuffer());
+    if (data.length < bytes) throw new Error("truncated");
+    let dp = 0;
+    for (let k=0;k<cnt;k++){
+      const sz = sizeOf(si+k), L = sz+7;
+      out[o]=0xFF; out[o+1]=0xF1; out[o+2]=((aot-1)<<6)|(fi<<2)|(ch>>2); out[o+3]=((ch&3)<<6)|(L>>11); out[o+4]=(L>>3)&255; out[o+5]=((L&7)<<5)|0x1F; out[o+6]=0xFC;
+      out.set(data.subarray(dp, dp+sz), o+7); o += L; dp += sz;
+    }
+    si += cnt;
+    if (c % 200 === 0) setStatus("جاري استخراج الصوت من الفيديو… "+Math.round(c/nC*100)+"%");
+  }
+  return out.subarray(0, o);
+}
+
 /* ---------------- جلب النصوص ---------------- */
 const textCache = new Map();
 function cleanText(t){ return String(t||"").replace(/﻿/g,"").replace(/\s+/g," ").trim(); }
@@ -615,7 +705,7 @@ function trimOf(buf){
   while (a<n && rms[a]<thr) a++;
   while (b>a && rms[b]<thr) b--;
   if (a>=n){ r={start:0,end:buf.duration}; }
-  else { r={start:Math.max(0, a*win/sr - 0.03), end:Math.min(buf.duration, (b+1)*win/sr + 0.10)}; if (r.end-r.start<0.2) r={start:0,end:buf.duration}; }
+  else { r={start:Math.max(0, a*win/sr - 0.02), end:Math.min(buf.duration, (b+1)*win/sr + 0.04)}; if (r.end-r.start<0.2) r={start:0,end:buf.duration}; }
   trimCache.set(buf, r); return r;
 }
 let preparing = null;
@@ -645,7 +735,7 @@ async function prepare(){
       const worker = async ()=>{ while(next<jobs.length){ const i=next++; bufs[i]=await loadAyahAudio(jobs[i].s, jobs[i].a); done++; setStatus("جاري تحميل التلاوة… "+done+" / "+jobs.length); } };
       await Promise.all([worker(),worker(),worker(),worker()]);
       // قصّ الصمت من أول كل ملف وآخره حتى تتصل الآيات بلا انقطاع
-      let t = 0.4; const JOIN = 0.12; // نَفَس قصير طبيعي بين الآيتين
+      let t = 0.4; const JOIN = 0; // بلا أي فاصل بين الآيتين
       jobs.forEach((j,i)=>{ const b=bufs[i]; const tr=trimOf(b); const d=tr.end-tr.start;
         plan.push({buffer:b, at:t, offset:tr.start, dur:d});
         items.push({kind:j.kind, num:j.kind==="ayah"?j.num:null, verse:j.verse, tafsir:j.tafsir, trans:j.trans, start:t, end:t+d});
@@ -1114,8 +1204,7 @@ $("audioFile").addEventListener("change", async e=>{
   $("autoSplitBtn").disabled = true; $("tapSyncBtn").disabled = true;
   try{
     if (f.size > 400*1048576) setStatus("الملف كبير، قد يأخذ وقتاً…");
-    const buf = await f.arrayBuffer();
-    uploadBuf = await decode(buf);
+    uploadBuf = await decodeFile(f);
     uploadName = f.name+"|"+f.size;
     segments = [];
     $("fileInfo").textContent = "✓ "+f.name+" — المدة "+fmt(uploadBuf.duration);
@@ -1124,7 +1213,7 @@ $("audioFile").addEventListener("change", async e=>{
     setStatus("تم استخراج الصوت ✓ الآن اضغط «تقسيم الآيات تلقائياً»", "ok");
   }catch(err){
     uploadBuf = null;
-    setStatus("⚠️ تعذّر استخراج الصوت من هذا الملف. جرّب ملف MP3 أو MP4.", "err");
+    setStatus("⚠️ تعذّر استخراج الصوت من هذا الملف. قد يكون بلا صوت أو بصيغة غير مدعومة. جرّب ملف MP3 أو M4A أو MP4.", "err");
     console.error(err);
   }
   e.target.value = "";
@@ -1424,7 +1513,7 @@ $("chromaFile").addEventListener("change", async e=>{
     const v = await makeVideo(url);
     v.addEventListener("seeked", refreshStill);
     let buffer = null;
-    try { buffer = await decode(await f.arrayBuffer()); } catch(err){ console.warn("no audio", err); }
+    try { buffer = await decodeFile(f); } catch(err){ console.warn("no audio", err); }
     if (chromaClip){ try{ URL.revokeObjectURL(chromaClip.url); }catch(_){} }
     chromaClip = {el:v, url, buffer, duration: v.duration || (buffer ? buffer.duration : 0)};
     chromaFileKey = f.name+"|"+f.size;
