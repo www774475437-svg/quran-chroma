@@ -765,13 +765,54 @@ async function loadSurahText(surah){
   const byEd = {};
   for (const d of json.data) byEd[d.edition.identifier] = d.ayahs;
   const ref = byEd[S.trans] || byEd[S.tafsir] || [];
+  const tfAll = S.tafsir!=="custom" && byEd[S.tafsir] ? splitGroupedTafsir(quran.map((_,i)=> cleanText(byEd[S.tafsir][i] && byEd[S.tafsir][i].text)), quran) : null;
   const ayahs = quran.map((t,i)=>{
-    const tf = S.tafsir!=="custom" && byEd[S.tafsir] ? cleanText(byEd[S.tafsir][i] && byEd[S.tafsir][i].text) : "";
+    const tf = tfAll ? tfAll[i] : "";
     const tr = byEd[S.trans] ? cleanText(byEd[S.trans][i] && byEd[S.trans][i].text) : "";
     return {num:i+1, global: ref[i] ? ref[i].number : 0, verse:String(t).trim(), tafsir:tf, trans:tr};
   });
   const out = {ayahs, basmala:BASMALA};
   textCache.set(key, out);
+  return out;
+}
+
+/* التفسير الميسر يجمع أحياناً عدة آيات قصيرة في نص واحد مكرر؛ نقسّمه على الآيات حسب علامات الترقيم */
+function splitGroupedTafsir(tf, quran){
+  const out = tf.slice(); const letters = t => stripNum(t).replace(/[^\u0621-\u064A]/g,"").length || 1;
+  let i = 0;
+  while (i < tf.length){
+    let j = i; while (j+1 < tf.length && tf[j+1] && tf[j+1] === tf[i]) j++;
+    const n = j-i+1;
+    if (n >= 2 && tf[i]){
+      const cl = (tf[i].match(/[^،؛.!؟]+[،؛.!؟]*/g) || [tf[i]]).map(x=>x.trim()).filter(Boolean);
+      const m = cl.length;
+      const vw = []; for (let k=i;k<=j;k++) vw.push(letters(quran[k]));
+      const vT = vw.reduce((a,b)=>a+b,0), cw = cl.map(c=>c.length), cT = cw.reduce((a,b)=>a+b,0);
+      // كلمات مشتركة بين الآية وجملة التفسير تساعد على المطابقة الصحيحة
+      const wkey = w => normAr(w).replace(/^(وال|فال|بال|كال|لل|ال|و|ف)/,"");
+      const wset = t => new Set(t.split(/[\s،؛.:!؟]+/).map(wkey).filter(x=>x.length>=3));
+      const vS = []; for (let k=i;k<=j;k++) vS.push(wset(stripNum(quran[k])));
+      const cS = cl.map(wset);
+      const share = (g, st, e)=>{ let c = 0; for (let x=st; x<e; x++) for (const w of cS[x]) if (vS[g].has(w)) c++; return c; };
+      if (m >= n){
+        // تقسيم الجمل إلى n مجموعات متتالية تناسب أطوال الآيات
+        const pre = [0]; cw.forEach(w=>pre.push(pre[pre.length-1]+w));
+        const INF = 1e18, dp = [], bk = [];
+        for (let g=0; g<=n; g++){ dp.push(new Array(m+1).fill(INF)); bk.push(new Array(m+1).fill(0)); }
+        dp[0][0] = 0;
+        for (let g=1; g<=n; g++) for (let e=g; e<=m-(n-g); e++) for (let st=g-1; st<e; st++){
+          if (dp[g-1][st] >= INF/2) continue;
+          const d = (pre[e]-pre[st])/cT - vw[g-1]/vT, c = dp[g-1][st] + d*d*30 - share(g-1, st, e)*0.08;
+          if (c < dp[g][e]){ dp[g][e] = c; bk[g][e] = st; }
+        }
+        let e = m; for (let g=n; g>=1; g--){ const st = bk[g][e]; out[i+g-1] = cl.slice(st,e).join(" "); e = st; }
+      } else {
+        let acc = 0, ca = 0, ci = 0;
+        for (let k=0;k<n;k++){ const mid = (acc + vw[k]/2)/vT; acc += vw[k]; while (ci < m-1 && (ca + cw[ci])/cT < mid){ ca += cw[ci]; ci++; } out[i+k] = cl[ci]; }
+      }
+    }
+    i = j+1;
+  }
   return out;
 }
 
@@ -1214,7 +1255,8 @@ async function doExport(opts0){
     const pr = await prepare();
     const [W,H] = dims("export");
     const cv = document.createElement("canvas"); cv.width=W; cv.height=H;
-    cv.style.cssText = "position:fixed;left:-99999px;top:0;width:10px;height:10px;opacity:0;pointer-events:none";
+    // يبقى داخل الشاشة (صغيراً جداً) لأن Safari على الآيفون لا يسجّل لوحة خارج الشاشة
+    cv.style.cssText = "position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none;z-index:-1";
     document.body.appendChild(cv);
     const c2 = cv.getContext("2d");
     drawFrame(c2, W, H, 0, pr.items, pr.total);
@@ -1227,6 +1269,7 @@ async function doExport(opts0){
     try { rec = new MediaRecorder(stream, opts); } catch(e){ rec = new MediaRecorder(stream); }
     const chunks = [];
     rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    rec.onerror = e => { console.error("recorder", e); if (exporting) exporting.failed = String((e.error && e.error.message) || "recorder error"); };
     const stopped = new Promise(res => rec.onstop = res);
     const outs = [dest]; if (S.monitor) outs.push(ctx.destination);
     exporting = {rec, cancelled:false, srcs:[]};
@@ -1254,8 +1297,9 @@ async function doExport(opts0){
       iv = setInterval(tick, 1000/30);
     });
     const cancelled = exporting.cancelled;
+    try{ if (rec.state !== "inactive") rec.requestData(); }catch(e){}
     try{ rec.stop(); }catch(e){}
-    await stopped;
+    await Promise.race([stopped, sleep(6000)]);
     stopSources(exporting.srcs);
     mediaPause();
     vStream.getTracks().forEach(t=>t.stop());
@@ -1264,7 +1308,7 @@ async function doExport(opts0){
     if (cancelled){ setStatus("تم الإيقاف."); $("prog").style.width="0%"; return; }
     const type = (rec.mimeType || mime || "video/webm").split(";")[0];
     const blob = new Blob(chunks, {type});
-    if (!blob.size) throw new Error("خرج الفيديو فارغاً، حاول مرة أخرى.");
+    if (!blob.size) throw new Error("لم يسجّل المتصفح الفيديو. حدّث الصفحة وحاول مرة أخرى، أو جرّب جودة 720p أو متصفح Chrome.");
     const ext = type.includes("mp4") ? "mp4" : "webm";
     const name = (pr.chromaName ? "قرآن-كروما-للنشر" : "قرآن-كروما-"+SURAH_NAMES[S.surah-1].replace(/\s/g,"-")+"-"+S.from+"-"+S.to) + (publish||bgMedia ? "-نشر" : "") + "." + ext;
     track(publish||bgMedia ? "publish" : "videos"); track("minutes", Math.max(1, Math.round(pr.total/60)));
