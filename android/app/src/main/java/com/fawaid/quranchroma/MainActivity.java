@@ -90,12 +90,22 @@ public class MainActivity extends Activity {
             public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
                 if (fileCallback != null) fileCallback.onReceiveValue(null);
                 fileCallback = callback;
+                // نحترم نوع الملف المطلوب (صوت، فيديو، أو صورة)
+                java.util.ArrayList<String> types = new java.util.ArrayList<>();
+                for (String t : params.getAcceptTypes()) {
+                    if (t == null) continue;
+                    for (String part : t.split(",")) {
+                        part = part.trim();
+                        if (part.contains("/")) types.add(part);
+                    }
+                }
+                if (types.isEmpty()) types.add("*/*");
                 Intent i = new Intent(Intent.ACTION_GET_CONTENT);
                 i.addCategory(Intent.CATEGORY_OPENABLE);
-                i.setType("*/*");
-                i.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"audio/*", "video/*"});
+                i.setType(types.size() == 1 ? types.get(0) : "*/*");
+                if (types.size() > 1) i.putExtra(Intent.EXTRA_MIME_TYPES, types.toArray(new String[0]));
                 try {
-                    startActivityForResult(Intent.createChooser(i, "اختر ملف صوت أو فيديو"), FILE_REQ);
+                    startActivityForResult(Intent.createChooser(i, "اختر ملفاً"), FILE_REQ);
                 } catch (Exception e) {
                     fileCallback = null;
                     return false;
