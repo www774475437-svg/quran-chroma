@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0d0c">
 <title>القرآن كروما</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="القرآن كروما">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&family=Aref+Ruqaa:wght@400;700&family=Reem+Kufi:wght@400;700&family=Lateef:wght@400;700&family=Tajawal:wght@400;700;800&family=Cairo:wght@400;700;800&family=Noto+Kufi+Arabic:wght@400;700&family=Poppins:wght@400;500;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -85,6 +90,33 @@ video.result{width:100%;border-radius:12px;margin-top:10px;background:#000}
 .overlay .tapBtn{width:min(80vw,320px);height:120px;border-radius:20px;border:none;background:var(--accent);color:#000;font:inherit;font-size:22px;font-weight:800;cursor:pointer}
 .switch{display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:14px}
 .switch input{width:22px;height:22px;accent-color:var(--accent)}
+.layout{display:block}
+#preview{touch-action:none;cursor:default}
+#preview.drag{cursor:grab}
+.statGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:min(92vw,560px);margin-top:12px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+.stat b{display:block;font-size:24px;color:var(--accent);font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.mediaBtns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mediaBtns .btn{margin:0;font-size:14px;padding:11px 6px;text-align:center}
+@media (min-width:600px){
+  #preview{max-height:44vh}
+  main{max-width:760px;margin:0 auto}
+}
+@media (min-width:980px){
+  body{padding-bottom:0}
+  header{max-width:1440px;margin:0 auto;padding:14px 24px}
+  .layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(380px,1fr);gap:24px;max-width:1440px;margin:0 auto;padding:0 24px 24px;align-items:start}
+  .stage{position:sticky;top:12px;border:1px solid var(--line);border-radius:18px;padding:14px;background:var(--panel)}
+  #preview{max-height:72vh}
+  .side{min-width:0}
+  nav.tabs{position:sticky;top:12px;border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:12px;background:var(--panel)}
+  nav.tabs button{flex-direction:row;justify-content:center;gap:6px;font-size:14px;padding:10px 4px;border-radius:10px}
+  nav.tabs button.on{background:var(--panel2)}
+  nav.tabs button svg{width:18px;height:18px}
+  main{padding:0;max-width:none}
+  .segList{max-height:420px}
+}
 footer{text-align:center;font-size:12px;color:var(--muted);padding:10px 0 20px}
 footer a{color:var(--accent)}
 </style>
@@ -98,6 +130,7 @@ footer a{color:var(--accent)}
   <a href="https://t.me/alhsaar4" target="_blank" rel="noopener">تواصل مع المطوّر</a>
 </header>
 
+<div class="layout">
 <section class="stage">
   <div class="canvasWrap"><canvas id="preview" width="960" height="540"></canvas></div>
   <div class="controls">
@@ -107,8 +140,8 @@ footer a{color:var(--accent)}
   </div>
   <div class="status" id="status">اختر السورة والآيات ثم اضغط ▶ للمعاينة.</div>
 </section>
-
-<main>
+<div class="side" style="display:flex;flex-direction:column">
+<main style="order:2">
   <!-- ========== الآيات والصوت ========== -->
   <div class="panel active" id="p-ayat">
     <div class="card">
@@ -270,6 +303,53 @@ footer a{color:var(--accent)}
     </div>
   </div>
 
+  <!-- ========== للنشر ========== -->
+  <div class="panel" id="p-publish">
+    <div class="card">
+      <h3>١. المقطع</h3>
+      <div class="seg" id="pubSource">
+        <button data-v="project" class="on">المقطع الحالي من التطبيق</button>
+        <button data-v="chroma">فيديو كروما جاهز</button>
+      </div>
+      <div id="chromaBox" style="display:none">
+        <label class="btn" for="chromaFile" style="text-align:center">📁 اختر فيديو كروما (خلفيته سوداء)</label>
+        <input type="file" id="chromaFile" accept="video/*,.mp4,.mov,.webm" style="display:none">
+        <div class="hint" id="chromaInfo">اختر فيديو كروما حمّلته من التطبيق أو من غيره. يُدمج فوق الخلفية مع صوته.</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>٢. الخلفية</h3>
+      <div class="mediaBtns">
+        <label class="btn" for="bgVideoFile">🎞️ فيديو</label>
+        <label class="btn" for="bgImageFile">🖼️ صورة</label>
+        <button class="btn" id="bgRemove">✖ إزالة</button>
+      </div>
+      <input type="file" id="bgVideoFile" accept="video/*,.mp4,.mov,.webm" style="display:none">
+      <input type="file" id="bgImageFile" accept="image/*" style="display:none">
+      <div class="hint" id="bgInfo">صوت فيديو الخلفية يُحذف تلقائياً، ويبقى صوت التلاوة فقط.</div>
+      <label class="f">التكبير والتصغير</label>
+      <div class="rangeRow"><input type="range" id="bgScale" min="50" max="300" value="100"><span id="bgScaleV">100%</span></div>
+      <label class="f">يمين ويسار</label>
+      <div class="rangeRow"><input type="range" id="bgX" min="-100" max="100" value="0"><span id="bgXV">0</span></div>
+      <label class="f">أعلى وأسفل</label>
+      <div class="rangeRow"><input type="range" id="bgY" min="-100" max="100" value="0"><span id="bgYV">0</span></div>
+      <label class="f">تعتيم الخلفية (حتى يظهر النص بوضوح)</label>
+      <div class="rangeRow"><input type="range" id="bgDim" min="0" max="85" value="35"><span id="bgDimV">35%</span></div>
+      <button class="btn small" id="bgCenter" style="margin-top:10px">توسيط الخلفية</button>
+      <div class="hint">تقدر تحرّك الخلفية بسحبها على المعاينة، وتقرّبها بإصبعين أو بعجلة الماوس.</div>
+    </div>
+    <div class="card">
+      <h3>٣. المقاس</h3>
+      <div class="seg" id="pubAspect">
+        <button data-v="9:16">طولي (حالات وريلز)</button>
+        <button data-v="1:1">مربع</button>
+        <button data-v="16:9" class="on">عرضي</button>
+      </div>
+    </div>
+    <button class="btn primary" id="publishBtn">🚀 صناعة فيديو جاهز للنشر</button>
+    <div class="hint" style="text-align:center">بعد الصناعة تقدر تحمّله أو تشاركه مباشرة في واتساب وغيره.</div>
+  </div>
+
   <!-- ========== المفضلة ========== -->
   <div class="panel" id="p-fav">
     <div class="card">
@@ -297,7 +377,7 @@ footer a{color:var(--accent)}
       <div id="resultBox" style="display:none">
         <video class="result" id="resultVideo" controls playsinline></video>
         <a class="btn green" id="downloadLink" style="text-align:center;text-decoration:none">⬇️ تحميل الفيديو</a>
-        <button class="btn" id="shareBtn" style="display:none">📤 مشاركة / حفظ في الصور</button>
+        <button class="btn" id="shareBtn" style="display:none">📤 مشاركة (واتساب وغيره)</button>
         <div class="hint" id="resultInfo"></div>
       </div>
     </div>
@@ -309,14 +389,26 @@ footer a{color:var(--accent)}
   </div>
   <footer>تطوير: أبو عبد الرحمن أحمد الأثري · <a href="https://t.me/alhsaar4" target="_blank" rel="noopener">تيليجرام</a><br>النصوص من alquran.cloud · التلاوات من everyayah.com</footer>
 </main>
-
-<nav class="tabs" id="tabs">
+<nav class="tabs" id="tabs" style="order:1">
   <button data-p="p-ayat" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h6M8 11h6"/></svg>الآيات</button>
   <button data-p="p-text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h10M4 18h7"/></svg>النصوص</button>
   <button data-p="p-design"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="10" r="1.3"/><circle cx="12" cy="7.5" r="1.3"/><circle cx="15.5" cy="10" r="1.3"/><path d="M12 21a3 3 0 0 1 0-6h1"/></svg>التصميم</button>
   <button data-p="p-fav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>المفضلة</button>
+  <button data-p="p-publish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.6"/></svg>للنشر</button>
   <button data-p="p-export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="14" height="14" rx="2"/><path d="m17 10 4-2v8l-4-2"/></svg>تصدير</button>
 </nav>
+</div>
+</div>
+
+<div class="overlay" id="devOverlay">
+  <div style="font-size:20px;font-weight:800;color:var(--accent)">📊 لوحة المطوّر</div>
+  <div class="hint" id="devNote">جاري تحميل الإحصائيات…</div>
+  <div class="statGrid" id="devGrid"></div>
+  <div class="row" style="margin-top:14px;width:min(92vw,560px)">
+    <button class="btn" id="devRefresh" style="margin:0">تحديث</button>
+    <button class="btn" id="devClose" style="margin:0">إغلاق</button>
+  </div>
+</div>
 
 <div class="overlay" id="tapOverlay">
   <div class="hint" id="tapStep" style="font-size:15px;color:#fff"></div>
@@ -376,13 +468,13 @@ const SAMPLE = [{kind:"ayah", num:25, verse:"قَالَ رَبِّ ٱشۡرَح�
 /* ---------------- الإعدادات ---------------- */
 const DEFAULTS = {
   surah:20, from:25, to:36, audioMode:"reciter", reciter:0, customFolder:"", addBasmala:false,
-  hasIstiadha:false, hasBasmala:false,
+  hasIstiadha:false, hasBasmala:false, pubSource:"project",
   showTafsir:true, showTrans:true, showNumber:true, fade:true,
   tafsir:"ar.muyassar", customTafsir:"", trans:"en.sahih",
   aspect:"16:9", position:"center",
   cBg:"#000000", cVerse:"#ffffff", cTafsir:"#ffe500", cTrans:"#e6e6e6",
   fVerse:"KFGQPC Hafs", fTafsir:"Tajawal", fTrans:"Poppins",
-  sVerse:88, sTafsir:42, sTrans:34, quality:"1080", monitor:true
+  sVerse:88, sTafsir:42, sTrans:34, bgScale:100, bgX:0, bgY:0, bgDim:35, quality:"1080", monitor:true
 };
 let S = Object.assign({}, DEFAULTS);
 try { const saved = JSON.parse(localStorage.getItem("qc_settings")||"null"); if (saved && typeof saved==="object") for (const k in DEFAULTS) if (k in saved && typeof saved[k]===typeof DEFAULTS[k]) S[k]=saved[k]; } catch(e){}
@@ -482,6 +574,7 @@ function buildItemTexts(list){
   return list.map((a,i)=>({kind:"ayah", num:a.num, global:a.global, verse:a.verse, tafsir: S.tafsir==="custom" ? (lines[i]||"") : a.tafsir, trans:a.trans}));
 }
 function projectKey(){
+  if (S.pubSource==="chroma") return JSON.stringify(["chroma", chromaFileKey]);
   return JSON.stringify([S.surah,S.from,S.to,S.audioMode,S.reciter,S.customFolder,S.addBasmala,S.tafsir,S.customTafsir,S.trans, S.audioMode==="upload"?[uploadName,segments.map(s=>[s.start,s.end])]:0]);
 }
 async function altAudioUrls(edition, surah){
@@ -515,6 +608,14 @@ async function prepare(){
   if (project && project.key===key) return project;
   if (preparing && preparing.key===key) return preparing.p;
   const p = (async ()=>{
+    if (S.pubSource==="chroma"){
+      if (!chromaClip) throw new Error("اختر فيديو الكروما أولاً من قسم «للنشر»");
+      const items = []; items.chromaEl = chromaClip.el;
+      project = {key, items, plan: chromaClip.buffer ? [{buffer:chromaClip.buffer, at:0, offset:0, dur:chromaClip.buffer.duration}] : [], total: chromaClip.duration, chromaName: true};
+      setStatus("جاهز ✓ — فيديو كروما، المدة "+fmt(project.total), "ok");
+      updateTime(0);
+      return project;
+    }
     setStatus("جاري جلب الآيات والتفسير…");
     const txt = await loadSurahText(S.surah);
     const list = buildItemTexts(rangeAyahs(txt));
@@ -641,10 +742,34 @@ function drawMarker(ctx, cx, cy, r, num, color){
   ctx.restore();
 }
 function pageAt(block, frac){ if (!block) return null; const n = block.pages.length; return block.pages[Math.min(n-1, Math.floor(frac*n))]; }
+/* ---------------- الخلفية (صورة أو فيديو) ---------------- */
+let bgMedia = null;   // {type, el, url}
+function mediaSize(el){ return el.tagName==="VIDEO" ? [el.videoWidth, el.videoHeight] : [el.naturalWidth, el.naturalHeight]; }
+function drawBg(ctx, W, H){
+  ctx.fillStyle = S.cBg; ctx.fillRect(0,0,W,H);
+  if (!bgMedia) return;
+  const [w,h] = mediaSize(bgMedia.el); if (!w || !h) return;
+  const cs = Math.max(W/w, H/h) * (S.bgScale/100);
+  const dw = w*cs, dh = h*cs;
+  const dx = (W-dw)/2 + (S.bgX/100)*W*0.5, dy = (H-dh)/2 + (S.bgY/100)*H*0.5;
+  try { ctx.drawImage(bgMedia.el, dx, dy, dw, dh); } catch(e){}
+  if (S.bgDim > 0){ ctx.fillStyle = "rgba(0,0,0,"+(S.bgDim/100)+")"; ctx.fillRect(0,0,W,H); }
+}
+function drawChroma(ctx, W, H, el){
+  const [w,h] = mediaSize(el); if (!w || !h) return;
+  const cs = Math.min(W/w, H/h);
+  const dw = w*cs, dh = h*cs;
+  ctx.save();
+  // الدمج بطريقة «screen» يجعل الأسود شفافاً ويبقي النص
+  ctx.globalCompositeOperation = bgMedia ? "screen" : "source-over";
+  try { ctx.drawImage(el, (W-dw)/2, (H-dh)/2, dw, dh); } catch(e){}
+  ctx.restore();
+}
 function drawFrame(ctx, W, H, t, items, total){
   ctx.save();
   ctx.globalAlpha = 1;
-  ctx.fillStyle = S.cBg; ctx.fillRect(0,0,W,H);
+  drawBg(ctx, W, H);
+  if (items && items.chromaEl){ drawChroma(ctx, W, H, items.chromaEl); ctx.restore(); return; }
   if (!items || !items.length){ ctx.restore(); return; }
   let i = -1;
   for (let k=0;k<items.length;k++){ if (t >= items[k].start - 0.001) i=k; else break; }
@@ -755,7 +880,7 @@ function renderStill(){
   sizePreview();
   const items = project ? project.items : SAMPLE;
   const total = project ? project.total : 3;
-  const t = project ? (seekPos > 0 ? seekPos : Math.min(total, project.items[0].start + 0.5)) : 1;
+  const t = project ? (seekPos > 0 || !project.items.length ? seekPos : Math.min(total, project.items[0].start + 0.5)) : 1;
   drawFrame(pctx, pv.width, pv.height, t, items, total);
 }
 async function togglePlay(){
@@ -771,11 +896,13 @@ async function togglePlay(){
     const when = ctx.currentTime + 0.12;
     const srcs = startPlan(ctx, pr.plan, seekPos, when, [ctx.destination]);
     playing = {srcs, when, from:seekPos};
+    mediaPlay(seekPos);
     $("playBtn").textContent = "❚❚";
     const loop = ()=>{
       if (!playing) return;
       const t = playing.from + (ctx.currentTime - playing.when);
       if (t >= pr.total){ seekPos = 0; stopPreview(); return; }
+      mediaSync(Math.max(0,t));
       drawFrame(pctx, pv.width, pv.height, Math.max(0,t), pr.items, pr.total);
       updateTime(Math.max(0,t));
       playing.raf = requestAnimationFrame(loop);
@@ -790,6 +917,7 @@ function stopPreview(){
   seekPos = clamp(playing.from + (ctx.currentTime - playing.when), 0, project?project.total:0);
   if (seekPos >= (project?project.total:0) - 0.05) seekPos = 0;
   cancelAnimationFrame(playing.raf); stopSources(playing.srcs); playing = null;
+  mediaPause();
   $("playBtn").textContent = "▶";
   renderStill(); updateTime(seekPos);
 }
@@ -832,7 +960,8 @@ function pickMime(){
   for (const m of list){ try{ if (MediaRecorder.isTypeSupported(m)) return m; }catch(e){} }
   return "";
 }
-async function doExport(){
+async function doExport(opts0){
+  const publish = !!(opts0 && opts0.publish);
   if (exporting) return;
   if (playing) stopPreview();
   const mime = pickMime();
@@ -867,12 +996,14 @@ async function doExport(){
     await sleep(150);
     const when = ctx.currentTime + 0.25;
     exporting.srcs = startPlan(ctx, pr.plan, 0, when, outs);
+    mediaPlay(0);
     sizePreview();
     await new Promise(resolve=>{
       let iv;
       const tick = ()=>{
         if (!exporting || exporting.cancelled){ clearInterval(iv); resolve(); return; }
         const t = ctx.currentTime - when;
+        mediaSync(clamp(t,0,pr.total));
         drawFrame(c2, W, H, clamp(t,0,pr.total), pr.items, pr.total);
         pctx.drawImage(cv, 0, 0, pv.width, pv.height);
         const pc = clamp(t/pr.total,0,1);
@@ -886,6 +1017,7 @@ async function doExport(){
     try{ rec.stop(); }catch(e){}
     await stopped;
     stopSources(exporting.srcs);
+    mediaPause();
     vStream.getTracks().forEach(t=>t.stop());
     cv.remove();
     exporting = null;
@@ -894,7 +1026,8 @@ async function doExport(){
     const blob = new Blob(chunks, {type});
     if (!blob.size) throw new Error("خرج الفيديو فارغاً، حاول مرة أخرى.");
     const ext = type.includes("mp4") ? "mp4" : "webm";
-    const name = "قرآن-كروما-"+SURAH_NAMES[S.surah-1].replace(/\s/g,"-")+"-"+S.from+"-"+S.to+"."+ext;
+    const name = (pr.chromaName ? "قرآن-كروما-للنشر" : "قرآن-كروما-"+SURAH_NAMES[S.surah-1].replace(/\s/g,"-")+"-"+S.from+"-"+S.to) + (publish||bgMedia ? "-نشر" : "") + "." + ext;
+    track(publish||bgMedia ? "publish" : "videos"); track("minutes", Math.max(1, Math.round(pr.total/60)));
     const url = URL.createObjectURL(blob);
     $("resultVideo").src = url;
     const a = $("downloadLink"); a.href = url; a.download = name;
@@ -904,21 +1037,20 @@ async function doExport(){
     if (window.QCBridge){
       // داخل تطبيق الأندرويد: الحفظ في معرض الصور
       a.textContent = "💾 حفظ الفيديو في المعرض";
-      $("shareBtn").style.display="none";
-      a.onclick = async ev=>{
-        ev.preventDefault();
-        if (a.dataset.busy) return; a.dataset.busy="1";
-        try{
-          const where = await saveViaBridge(blob, name, type);
-          setStatus("تم حفظ الفيديو ✓ "+where, "ok");
-          $("shareBtn").style.display="block";
-          $("shareBtn").onclick = ()=>{ try{ QCBridge.share(); }catch(e){} };
-        }catch(e){ console.error(e); setStatus("⚠️ تعذّر حفظ الفيديو، حاول مرة أخرى.", "err"); }
+      let saved = false;
+      const saveIt = async ()=>{
+        if (saved) return true;
+        if (a.dataset.busy) return false; a.dataset.busy="1";
+        try{ const where = await saveViaBridge(blob, name, type); saved = true; track("saves"); setStatus("تم حفظ الفيديو ✓ "+where, "ok"); return true; }
+        catch(e){ console.error(e); setStatus("⚠️ تعذّر حفظ الفيديو، حاول مرة أخرى.", "err"); return false; }
         finally{ delete a.dataset.busy; }
       };
+      a.onclick = ev=>{ ev.preventDefault(); saveIt(); };
+      $("shareBtn").style.display="block";
+      $("shareBtn").onclick = async ()=>{ if (await saveIt()){ track("shares"); try{ QCBridge.share(); }catch(e){} } };
     } else if (navigator.canShare && navigator.canShare({files:[file]})){
       $("shareBtn").style.display="block";
-      $("shareBtn").onclick = ()=> navigator.share({files:[file], title:name}).catch(()=>{});
+      $("shareBtn").onclick = ()=>{ track("shares"); navigator.share({files:[file], title:name}).catch(()=>{}); };
     } else $("shareBtn").style.display="none";
     $("prog").style.width="100%";
     setStatus("تم صناعة الفيديو ✓ اضغط «تحميل الفيديو»", "ok");
@@ -942,7 +1074,8 @@ async function saveViaBridge(blob, name, type){
   }
   return QCBridge.finish();
 }
-$("exportBtn").addEventListener("click", doExport);
+$("exportBtn").addEventListener("click", ()=>doExport());
+$("downloadLink").addEventListener("click", ()=>{ if (!window.QCBridge) track("saves"); });
 $("cancelBtn").addEventListener("click", ()=>{ if (exporting) exporting.cancelled = true; });
 
 /* ---------------- رفع الصوت والتقسيم ---------------- */
@@ -1180,6 +1313,177 @@ $("addFav").addEventListener("click", ()=>{
   saveFavs(favs.slice(0,100)); renderFavs(); setStatus("أُضيف إلى المفضلة ⭐","ok");
 });
 
+/* ---------------- مزامنة الفيديوهات (الخلفية والكروما) ---------------- */
+let chromaClip = null, chromaFileKey = "";
+function activeVideos(){
+  const v = [];
+  if (bgMedia && bgMedia.type==="video") v.push({el:bgMedia.el, loop:true});
+  if (S.pubSource==="chroma" && chromaClip) v.push({el:chromaClip.el, loop:false});
+  return v;
+}
+function mediaPlay(from){
+  for (const {el, loop} of activeVideos()){
+    try{ const d = el.duration||0; el.currentTime = loop && d ? from % d : Math.min(from, Math.max(0,d-0.05)); el.play().catch(()=>{}); }catch(e){}
+  }
+}
+function mediaSync(t){
+  for (const {el, loop} of activeVideos()){
+    const d = el.duration||0; if (!d) continue;
+    const want = loop ? t % d : Math.min(t, d);
+    if (Math.abs(el.currentTime - want) > 0.3 && !(loop && Math.abs(el.currentTime - want) > d-0.4)) { try{ el.currentTime = want; }catch(e){} }
+    if (el.paused && (loop || t < d)) el.play().catch(()=>{});
+  }
+}
+function mediaPause(){ for (const {el} of activeVideos()) { try{ el.pause(); }catch(e){} } }
+function makeVideo(url){
+  return new Promise((res, rej)=>{
+    const v = document.createElement("video");
+    v.muted = true; v.defaultMuted = true; v.playsInline = true; v.setAttribute("playsinline",""); v.preload = "auto"; v.crossOrigin = "anonymous";
+    v.onloadeddata = ()=> res(v);
+    v.onerror = ()=> rej(new Error("video"));
+    v.src = url; v.load();
+  });
+}
+function refreshStill(){ if (!playing && !exporting) renderStill(); }
+
+$("bgVideoFile").addEventListener("change", async e=>{
+  const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return;
+  try{
+    const url = URL.createObjectURL(f);
+    const v = await makeVideo(url); v.loop = true;
+    v.addEventListener("seeked", refreshStill);
+    clearBg(); bgMedia = {type:"video", el:v, url};
+    S.bgX = 0; S.bgY = 0; S.bgScale = 100; saveSettings(); syncUI();
+    $("bgInfo").textContent = "✓ فيديو الخلفية: "+f.name+" — صوته محذوف، ويتكرر إذا كان أقصر من التلاوة.";
+    $("preview").classList.add("drag"); refreshStill();
+  }catch(err){ setStatus("⚠️ تعذّر فتح فيديو الخلفية. جرّب ملف MP4.", "err"); }
+});
+$("bgImageFile").addEventListener("change", e=>{
+  const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return;
+  const url = URL.createObjectURL(f);
+  const img = new Image();
+  img.onload = ()=>{ clearBg(); bgMedia = {type:"image", el:img, url}; S.bgX=0; S.bgY=0; S.bgScale=100; saveSettings(); syncUI(); $("bgInfo").textContent = "✓ صورة الخلفية: "+f.name; $("preview").classList.add("drag"); refreshStill(); };
+  img.onerror = ()=> setStatus("⚠️ تعذّر فتح الصورة.", "err");
+  img.src = url;
+});
+function clearBg(){ if (bgMedia){ try{ bgMedia.el.pause && bgMedia.el.pause(); }catch(e){} try{ URL.revokeObjectURL(bgMedia.url); }catch(e){} } bgMedia = null; $("preview").classList.remove("drag"); }
+$("bgRemove").addEventListener("click", ()=>{ clearBg(); $("bgInfo").textContent = "صوت فيديو الخلفية يُحذف تلقائياً، ويبقى صوت التلاوة فقط."; refreshStill(); });
+for (const k of ["bgScale","bgX","bgY","bgDim"]) $(k).addEventListener("input", ()=>{ S[k] = +$(k).value; saveSettings(); syncBgLabels(); refreshStill(); });
+$("bgCenter").addEventListener("click", ()=>{ S.bgX=0; S.bgY=0; S.bgScale=100; saveSettings(); syncUI(); refreshStill(); });
+function syncBgLabels(){ $("bgScaleV").textContent = S.bgScale+"%"; $("bgXV").textContent = S.bgX; $("bgYV").textContent = S.bgY; $("bgDimV").textContent = S.bgDim+"%"; }
+
+/* سحب الخلفية وتقريبها على المعاينة */
+(function(){
+  const pts = new Map(); let startDist = 0, startScale = 100;
+  pv.addEventListener("pointerdown", e=>{ if (!bgMedia) return; pv.setPointerCapture(e.pointerId); pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if (pts.size===2){ const [a,b] = [...pts.values()]; startDist = Math.hypot(a.x-b.x, a.y-b.y); startScale = S.bgScale; } });
+  pv.addEventListener("pointermove", e=>{
+    if (!bgMedia || !pts.has(e.pointerId)) return;
+    const prev = pts.get(e.pointerId); const cur = {x:e.clientX, y:e.clientY}; pts.set(e.pointerId, cur);
+    const r = pv.getBoundingClientRect();
+    if (pts.size===1){
+      S.bgX = clamp(Math.round(S.bgX + (cur.x-prev.x)/r.width*200), -100, 100);
+      S.bgY = clamp(Math.round(S.bgY + (cur.y-prev.y)/r.height*200), -100, 100);
+    } else if (pts.size===2 && startDist){
+      const [a,b] = [...pts.values()]; S.bgScale = clamp(Math.round(startScale * Math.hypot(a.x-b.x, a.y-b.y)/startDist), 50, 300);
+    }
+    syncBgInputs(); refreshStill();
+  });
+  const up = e=>{ pts.delete(e.pointerId); if (pts.size<2) startDist = 0; saveSettings(); };
+  pv.addEventListener("pointerup", up); pv.addEventListener("pointercancel", up);
+  pv.addEventListener("wheel", e=>{ if (!bgMedia) return; e.preventDefault(); S.bgScale = clamp(Math.round(S.bgScale * (e.deltaY<0 ? 1.06 : 0.94)), 50, 300); syncBgInputs(); saveSettings(); refreshStill(); }, {passive:false});
+})();
+function syncBgInputs(){ for (const k of ["bgScale","bgX","bgY","bgDim"]) $(k).value = S[k]; syncBgLabels(); }
+
+/* فيديو كروما جاهز */
+$("chromaFile").addEventListener("change", async e=>{
+  const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return;
+  setStatus("جاري تجهيز فيديو الكروما…");
+  try{
+    const url = URL.createObjectURL(f);
+    const v = await makeVideo(url);
+    v.addEventListener("seeked", refreshStill);
+    let buffer = null;
+    try { buffer = await decode(await f.arrayBuffer()); } catch(err){ console.warn("no audio", err); }
+    if (chromaClip){ try{ URL.revokeObjectURL(chromaClip.url); }catch(_){} }
+    chromaClip = {el:v, url, buffer, duration: v.duration || (buffer ? buffer.duration : 0)};
+    chromaFileKey = f.name+"|"+f.size;
+    $("chromaInfo").textContent = "✓ "+f.name+" — المدة "+fmt(chromaClip.duration)+(buffer ? "" : " (بلا صوت)");
+    invalidate(); await prepare();
+  }catch(err){ console.error(err); setStatus("⚠️ تعذّر فتح فيديو الكروما. جرّب ملف MP4.", "err"); }
+});
+$("publishBtn").addEventListener("click", ()=>{ showTab("p-export"); doExport({publish:true}); });
+
+/* ---------------- الإحصائيات ---------------- */
+const STATS_NS = "quran-chroma-athari";
+const STATS_API = "https://abacus.jasoncameron.dev";
+function track(key, n){
+  n = Math.min(Math.max(1, n||1), 60);
+  (async ()=>{ for (let i=0;i<n;i++){ try{ await fetch(STATS_API+"/hit/"+STATS_NS+"/"+key); }catch(e){ return; } } })();
+}
+function dayKey(d){ return "d"+d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0"); }
+(function trackOpen(){
+  try{
+    const plat = window.QCBridge ? "app" : "web";
+    track("opens");
+    if (!localStorage.getItem("qc_uid")){ localStorage.setItem("qc_uid", String(Date.now())); track("users"); track("users-"+plat); }
+    const dk = dayKey(new Date());
+    if (localStorage.getItem("qc_day")!==dk){ localStorage.setItem("qc_day", dk); track(dk); }
+  }catch(e){}
+})();
+async function getCount(key){
+  try{ const r = await fetch(STATS_API+"/get/"+STATS_NS+"/"+key); if (!r.ok) return 0; const j = await r.json(); return +j.value || 0; }catch(e){ return null; }
+}
+async function apkDownloads(){
+  try{
+    const r = await fetch("https://api.github.com/repos/www774475437-svg/quran-chroma/releases?per_page=100");
+    const j = await r.json(); let n = 0;
+    for (const rel of j) for (const a of (rel.assets||[])) if (/\.apk$/i.test(a.name)) n += a.download_count||0;
+    return n;
+  }catch(e){ return null; }
+}
+async function loadStats(){
+  $("devNote").textContent = "جاري تحميل الإحصائيات…"; $("devGrid").innerHTML = "";
+  const today = new Date(), days = [];
+  for (let i=0;i<7;i++){ const d = new Date(today); d.setDate(d.getDate()-i); days.push(dayKey(d)); }
+  const keys = ["users","users-app","users-web","opens","videos","publish","saves","shares","minutes"];
+  const [apk, ...vals] = await Promise.all([apkDownloads(), ...keys.map(getCount), ...days.map(getCount)]);
+  const v = {}; keys.forEach((k,i)=> v[k] = vals[i]);
+  const dv = vals.slice(keys.length);
+  const f = x => x===null ? "—" : Number(x).toLocaleString("ar-EG");
+  const week = dv.some(x=>x===null) ? null : dv.reduce((a,b)=>a+b,0);
+  const mins = v.minutes;
+  const cards = [
+    ["تحميلات التطبيق (APK)", f(apk)],
+    ["المستخدمون اليوم", f(dv[0])],
+    ["المستخدمون أمس", f(dv[1])],
+    ["مستخدمو آخر ٧ أيام (يومياً)", f(week)],
+    ["كل المستخدمين", f(v.users)],
+    ["من التطبيق / من الموقع", f(v["users-app"])+" / "+f(v["users-web"])],
+    ["مرات فتح التطبيق", f(v.opens)],
+    ["فيديوهات كروما مصنوعة", f(v.videos)],
+    ["فيديوهات جاهزة للنشر", f(v.publish)],
+    ["فيديوهات حُمّلت للجهاز", f(v.saves)],
+    ["مرات المشاركة", f(v.shares)],
+    ["ساعات التلاوات المصنوعة", mins===null ? "—" : (mins/60).toLocaleString("ar-EG",{maximumFractionDigits:1})]
+  ];
+  $("devGrid").innerHTML = cards.map(([a,b])=>'<div class="stat"><b>'+b+'</b><span>'+a+'</span></div>').join("");
+  $("devNote").textContent = "الأرقام تقريبية ومجهولة الهوية، وتبدأ من تاريخ إضافة الإحصائيات.";
+}
+let devTaps = 0, devLast = 0;
+document.querySelector("header h1").addEventListener("click", ()=>{
+  const now = Date.now(); devTaps = (now - devLast < 1500) ? devTaps+1 : 1; devLast = now;
+  if (devTaps >= 17){ devTaps = 0; $("devOverlay").classList.add("show"); loadStats(); }
+});
+$("devRefresh").addEventListener("click", loadStats);
+$("devClose").addEventListener("click", ()=> $("devOverlay").classList.remove("show"));
+
+/* مفتاح المسافة للتشغيل والإيقاف على الحاسوب */
+document.addEventListener("keydown", e=>{
+  if (e.code==="Space" && !/INPUT|TEXTAREA|SELECT/.test((e.target.tagName||"")) && !e.target.isContentEditable){ e.preventDefault(); togglePlay(); }
+});
+if ("serviceWorker" in navigator && !window.QCBridge && location.protocol==="https:"){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+
 /* ---------------- ربط الواجهة ---------------- */
 function showTab(id){
   document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active", p.id===id));
@@ -1224,6 +1528,9 @@ function syncUI(){
   for (const k of ["fVerse","fTafsir","fTrans"]) $(k).value = S[k];
   for (const k of ["sVerse","sTafsir","sTrans"]) { $(k).value = S[k]; $(k+"V").textContent = S[k]; }
   $("monitor").checked = S.monitor;
+  syncSeg("pubSource", S.pubSource); syncSeg("pubAspect", S.aspect);
+  $("chromaBox").style.display = S.pubSource==="chroma" ? "" : "none";
+  syncBgInputs();
 }
 function onRangeChange(){
   if (S.audioMode==="upload" && segments.length){ segments=[]; renderSegList(); setStatus("تغيّرت الآيات، أعد تقسيم الصوت.", ""); }
@@ -1242,7 +1549,9 @@ document.querySelectorAll("[data-toggle]").forEach(c=>c.addEventListener("click"
 $("tafsirSel").addEventListener("change", ()=>{ S.tafsir = $("tafsirSel").value; saveSettings(); syncUI(); invalidate(); });
 $("customTafsir").addEventListener("change", ()=>{ S.customTafsir = $("customTafsir").value; saveSettings(); invalidate(); });
 $("transSel").addEventListener("change", ()=>{ S.trans = $("transSel").value; saveSettings(); invalidate(); });
-bindSeg("aspect","aspect", ()=>{ layoutCache.clear(); if (!playing) renderStill(); else sizePreview(); });
+bindSeg("aspect","aspect", ()=>{ syncUI(); layoutCache.clear(); if (!playing) renderStill(); else sizePreview(); });
+bindSeg("pubAspect","aspect", ()=>{ syncUI(); layoutCache.clear(); if (!playing) renderStill(); else sizePreview(); });
+bindSeg("pubSource","pubSource", ()=>{ syncUI(); invalidate(); });
 bindSeg("position","position", ()=>{ if (!playing) renderStill(); });
 bindSeg("quality","quality");
 for (const k of ["cBg","cVerse","cTafsir","cTrans"]) $(k).addEventListener("input", ()=>{ S[k]=$(k).value; saveSettings(); if (k==="cBg") syncUI(); if (!playing) renderStill(); });
