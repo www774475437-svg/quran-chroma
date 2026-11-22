@@ -576,6 +576,23 @@ details.grp>.grpBody>.card{margin:0 0 10px}
       <button class="setRow" id="setLikes" type="button"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></span><span class="tx"><b>ما أعجبني</b><small id="setLikesSub">0 مقطع</small></span><span class="chev">‹</span></button>
     </div>
 
+    <div class="setTitle">التنزيل بلا إنترنت</div>
+    <div class="setGroup" style="padding:14px 14px 6px">
+      <label class="f">السورة</label>
+      <select id="offSurah"></select>
+      <label class="f">القارئ</label>
+      <select id="offReciter"></select>
+      <div class="hint" id="offInfo">التنزيل يحفظ النصوص والصوت داخل هذا الجهاز، فتعمل بلا إنترنت. اترك الصفحة مفتوحة حتى يكتمل.</div>
+    </div>
+    <div class="setGroup">
+      <button class="setRow" id="offTafsir" type="button"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 20h16"/></svg></span><span class="tx"><b>التفسير الميسر والترجمة الإنجليزية</b><small>نص فقط، حجم صغير</small></span><span class="chev">‹</span></button>
+      <button class="setRow" id="offAudio" type="button"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 20h16"/></svg></span><span class="tx"><b>صوت القارئ المختار</b><small>تلاوة الآيات بصوت القارئ</small></span><span class="chev">‹</span></button>
+      <button class="setRow" id="offAll" type="button"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 20h16"/></svg></span><span class="tx"><b>تنزيل كل شيء</b><small>النص والتفسير والترجمة والصوت للقارئ المختار</small></span><span class="chev">‹</span></button>
+      <button class="setRow" id="offClear" type="button"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 20h16"/></svg></span><span class="tx"><b>حذف التنزيلات</b><small>لتحرير مساحة الجهاز</small></span><span class="chev">‹</span></button>
+    </div>
+    <div class="hint" id="offStatus" style="margin:8px 6px"></div>
+    <button class="btn" id="offStop" style="display:none" type="button">إيقاف التنزيل</button>
+
     <div class="setTitle">التطبيق</div>
     <div class="setGroup">
       <a class="setRow" id="apkRow" href="https://github.com/www774475437-svg/quran-chroma/releases/latest/download/quran-chroma.apk" style="display:none"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 20h16"/></svg></span><span class="tx"><b>تحميل تطبيق الأندرويد</b><small>ملف APK للتثبيت المباشر</small></span><span class="chev">‹</span></a>
@@ -801,7 +818,13 @@ const clamp = (v,a,b)=>Math.min(b,Math.max(a,v));
 function setStatus(msg, cls){ const el=$("status"); el.textContent=msg||""; el.className="status"+(cls?" "+cls:""); }
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 
+const OFF = "qc-offline-v1";
+async function offlineHit(url, type){
+  try{ if (!window.caches) return null; const r = await (await caches.open(OFF)).match(url); if (!r) return null; return type==="json" ? await r.json() : await r.arrayBuffer(); }
+  catch(e){ return null; }
+}
 async function fetchWithRetry(url, type, tries=3){
+  const hit = await offlineHit(url, type); if (hit) return hit;
   let lastErr;
   for (let i=0;i<tries;i++){
     const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), 30000);
@@ -2391,7 +2414,77 @@ groupInto("p-text", "p-ayat", "النصوص والتفسير والترجمة", 
 groupInto("p-design", "setGroups", "التصميم والألوان", false);
 groupInto("p-fav", "setGroups", "المفضلة", false);
 groupInto("p-export", "p-publish", "صناعة الفيديو", true);
+/* التنزيل بلا إنترنت: يحفظ الملفات في Cache Storage، ويقرأها fetchWithRetry قبل الشبكة */
+let offRun = null;
+const offSetStatus = t => { $("offStatus").textContent = t; };
+async function offStore(url){
+  const c = await caches.open(OFF);
+  if (await c.match(url)) return;
+  let last;
+  for (let i=0;i<3;i++){
+    try{ const r = await fetch(url); if (r.ok){ await c.put(url, r); return; } last = new Error("HTTP "+r.status); }
+    catch(e){ last = e; }
+    await sleep(800*(i+1));
+  }
+  throw last;
+}
+async function refreshOffInfo(){
+  try{
+    const n = (await (await caches.open(OFF)).keys()).length;
+    const est = navigator.storage && navigator.storage.estimate ? await navigator.storage.estimate() : null;
+    const mb = est && est.usage ? " · المساحة المستخدمة: " + (est.usage/1048576).toFixed(0) + " ميغابايت" : "";
+    $("offInfo").textContent = "ملفات محفوظة على الجهاز: " + n + mb + ". اترك الصفحة مفتوحة حتى يكتمل التنزيل.";
+  }catch(e){}
+}
+async function offRunJobs(urls, label){
+  if (offRun) return;
+  if (!window.caches){ offSetStatus("هذا المتصفح لا يدعم التنزيل بلا إنترنت."); return; }
+  offRun = {stop:false}; $("offStop").style.display = "";
+  const queue = urls.slice(), total = urls.length; let done = 0, failed = 0;
+  offSetStatus(label + ": جارٍ التنزيل...");
+  const worker = async ()=>{
+    while (queue.length && !offRun.stop){
+      const u = queue.shift();
+      try{ await offStore(u); }catch(e){ failed++; }
+      done++;
+      if (done % 10 === 0 || done === total) offSetStatus(label + ": " + done + " من " + total + (failed ? " (لم يُحفظ " + failed + ")" : ""));
+    }
+  };
+  try{ await Promise.all([worker(), worker(), worker(), worker()]); }
+  finally{
+    const stopped = offRun.stop; offRun = null; $("offStop").style.display = "none";
+    offSetStatus(stopped ? "أُوقف التنزيل. ما تم حفظه يعمل بلا إنترنت." :
+      label + " اكتمل ✓" + (failed ? ". لم تُحفظ " + failed + " ملفات، أعد التنزيل لإكمالها." : ""));
+    refreshOffInfo();
+  }
+}
+const offList = () => $("offSurah").value === "all" ? Array.from({length:114}, (_,i)=> i+1) : [+$("offSurah").value];
+const offFolder = () => (RECITERS[+$("offReciter").value] || RECITERS[0]).folder;
+const textUrls = list => list.map(s => "https://api.alquran.cloud/v1/surah/" + s + "/editions/" + [S.tafsir, S.trans].join(","));
+const quranUrls = list => list.map(s => "quran/" + s + ".json");
+function audioUrls(list, folder){
+  const out = [];
+  for (const s of list) for (let a=1; a<=AYAH_COUNTS[s-1]; a++) out.push("https://everyayah.com/data/" + folder + "/" + pad3(s) + pad3(a) + ".mp3");
+  return out;
+}
+$("offTafsir").addEventListener("click", ()=> offRunJobs(textUrls(offList()), "التفسير والترجمة"));
+$("offAudio").addEventListener("click", ()=> offRunJobs(audioUrls(offList(), offFolder()), "صوت " + RECITERS[+$("offReciter").value].name));
+$("offAll").addEventListener("click", ()=>{
+  const list = offList();
+  offRunJobs([...textUrls(list), ...quranUrls(list), ...audioUrls(list, offFolder())], "كل شيء");
+});
+$("offStop").addEventListener("click", ()=>{ if (offRun) offRun.stop = true; });
+$("offClear").addEventListener("click", async ()=>{
+  if (offRun || !confirm("حذف كل التنزيلات من هذا الجهاز؟")) return;
+  try{ await caches.delete(OFF); }catch(e){}
+  offSetStatus("حُذفت التنزيلات."); refreshOffInfo();
+});
 fillSurahs(); syncUI(); renderStill();
+$("offSurah").innerHTML = '<option value="all">كل السور</option>' + $("surah").innerHTML;
+$("offSurah").value = String(S.surah || 1);
+$("offReciter").innerHTML = RECITERS.map((r,i)=>'<option value="'+i+'">'+r.name+'</option>').join("");
+$("offReciter").value = String(S.reciter || 0);
+refreshOffInfo();
 restoreUpload().catch(()=>setStatus("تعذّر استعادة الصوت المحفوظ، ارفعه من جديد.", "err"));
 ensureFonts().then(()=>{ layoutCache.clear(); renderStill(); });
 </script>
