@@ -59,6 +59,8 @@ textarea{min-height:120px;resize:vertical;line-height:1.7}
 .seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
 .seg button{flex:1;border:none;background:transparent;color:var(--muted);padding:9px 6px;border-radius:9px;font:inherit;font-size:14px;cursor:pointer}
 .seg button.on{background:var(--accent);color:#000;font-weight:700}
+.seg.multi{flex-wrap:wrap}
+.seg.multi button{flex:1 1 30%;font-size:13px;padding:9px 4px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{border:1px solid var(--line);background:var(--panel2);color:var(--muted);padding:8px 14px;border-radius:999px;font:inherit;font-size:14px;cursor:pointer}
 .chip.on{border-color:var(--accent);color:#000;background:var(--accent);font-weight:700}
@@ -479,10 +481,13 @@ details.grp>.grpBody>.card{margin:0 0 10px}
   <div class="panel" id="p-design">
     <div class="card">
       <h3>مقاس الفيديو</h3>
-      <div class="seg" id="aspect">
+      <div class="seg multi" id="aspect">
         <button data-v="16:9" class="on">عرضي 16:9</button>
-        <button data-v="9:16">طولي 9:16</button>
+        <button data-v="4:3">عرضي 4:3</button>
         <button data-v="1:1">مربع 1:1</button>
+        <button data-v="4:5">طولي 4:5</button>
+        <button data-v="3:4">طولي 3:4</button>
+        <button data-v="9:16">طولي 9:16</button>
       </div>
       <label class="f">مكان النص</label>
       <div class="seg" id="position">
@@ -589,10 +594,13 @@ details.grp>.grpBody>.card{margin:0 0 10px}
     </div>
     <div class="card">
       <h3>٣. المقاس</h3>
-      <div class="seg" id="pubAspect">
-        <button data-v="9:16">طولي (حالات وريلز)</button>
-        <button data-v="1:1">مربع</button>
-        <button data-v="16:9" class="on">عرضي</button>
+      <div class="seg multi" id="pubAspect">
+        <button data-v="16:9" class="on">عرضي 16:9</button>
+        <button data-v="4:3">عرضي 4:3</button>
+        <button data-v="1:1">مربع 1:1</button>
+        <button data-v="4:5">طولي 4:5 (منشور)</button>
+        <button data-v="3:4">طولي 3:4</button>
+        <button data-v="9:16">طولي 9:16 (ريلز وحالات)</button>
       </div>
     </div>
     <button class="btn primary" id="publishBtn">صناعة فيديو جاهز للنشر</button>
@@ -1116,13 +1124,17 @@ async function loadAyahAudio(surah, ayah){
 
 /* حدود الصوت الفعلي داخل ملف الآية (بدون الصمت في أوله وآخره) */
 const trimCache = new WeakMap();
-/* يدمج كل المقاطع في مسار واحد نظيف: تلاشٍ قصير عند كل وصلة (بلا نقرات)، وتسوية مستوى كل آية، وحدّ أعلى لمنع التشويش */
+/* مدة التداخل بين كل آية والتي تليها (ثانية): تتلاشى الأولى وتظهر الثانية بقدرة ثابتة، فلا يبقى صمت ولا نقرة */
+const XF = 0.03;
+/* ضغط ناعم: يبقي الصوت واضحاً وأقوى دون تشويه حاد */
+function softClip(v){ const k = 0.72, a = Math.abs(v); if (a <= k) return v; const s = 1-k; const y = k + s*Math.tanh((a-k)/s); return v<0 ? -y : y; }
+/* يدمج كل المقاطع في مسار واحد نظيف: تداخل متساوي القدرة بين الآيات، وتسوية مستوى كل آية، وضغط ناعم، وحدّ أعلى للقمة */
 function renderPlan(plan, total){
-  const ctx = getCtx(); const sr = 44100, TARGET = 0.1, FADE = Math.round(0.012*sr);
+  const ctx = getCtx(); const sr = 44100, TARGET = 0.13, FADE = Math.round(0.012*sr), XFN = Math.round(XF*sr);
   const len = Math.max(1, Math.ceil(total*sr));
   const out = ctx.createBuffer(1, len, sr); const o = out.getChannelData(0);
-  for (const p of plan){
-    const src = p.buffer; if (!src) continue;
+  plan.forEach((p, idx) => {
+    const src = p.buffer; if (!src) return;
     const chs = []; for (let c=0;c<src.numberOfChannels;c++) chs.push(src.getChannelData(c));
     const ratio = src.sampleRate / sr;
     const n = Math.round(p.dur*sr), startOut = Math.round(p.at*sr), base = p.offset*src.sampleRate;
@@ -1130,14 +1142,24 @@ function renderPlan(plan, total){
     let e2 = 0, cnt = 0;
     for (let i=0;i<n;i+=4){ const v = sample(base + i*ratio); if (v===null) break; e2 += v*v; cnt++; }
     const rms = cnt ? Math.sqrt(e2/cnt) : 0;
-    const gain = rms > 0.0005 ? Math.min(2.5, Math.max(0.5, TARGET/rms)) : 1;
+    const gain = rms > 0.0005 ? Math.min(2.2, Math.max(0.5, TARGET/rms)) : 1;
+    const seg = new Float32Array(n);
+    for (let i=0;i<n;i++){
+      const v = sample(base + i*ratio); if (v===null) break;
+      let env = 1;
+      if (idx===0 && i < FADE) env = i/FADE;
+      if (idx===plan.length-1 && n-i < FADE) env = Math.min(env, (n-i)/FADE);
+      seg[i] = v*gain*env;
+    }
     for (let i=0;i<n;i++){
       const oi = startOut + i; if (oi < 0 || oi >= len) break;
-      const v = sample(base + i*ratio); if (v===null) break;
-      let env = 1; if (i < FADE) env = i/FADE; if (n-i < FADE) env = Math.min(env, (n-i)/FADE);
-      o[oi] += v*gain*env;
+      if (idx>0 && i < XFN){
+        const th = (i+0.5)/XFN*Math.PI/2;
+        o[oi] = o[oi]*Math.cos(th) + seg[i]*Math.sin(th);
+      } else o[oi] += seg[i];
     }
-  }
+  });
+  for (let i=0;i<len;i++) o[i] = softClip(o[i]);
   let peak = 0; for (let i=0;i<len;i++){ const a = Math.abs(o[i]); if (a > peak) peak = a; }
   if (peak > 0.95){ const k = 0.95/peak; for (let i=0;i<len;i++) o[i] *= k; }
   return out;
@@ -1153,7 +1175,7 @@ function trimOf(buf){
   while (a<n && rms[a]<thr) a++;
   while (b>a && rms[b]<thr) b--;
   if (a>=n){ r={start:0,end:buf.duration}; }
-  else { r={start:Math.max(0, a*win/sr - 0.02), end:Math.min(buf.duration, (b+1)*win/sr + 0.04)}; if (r.end-r.start<0.2) r={start:0,end:buf.duration}; }
+  else { r={start:Math.max(0, a*win/sr - 0.03), end:Math.min(buf.duration, (b+1)*win/sr + 0.06)}; if (r.end-r.start<0.2) r={start:0,end:buf.duration}; }
   trimCache.set(buf, r); return r;
 }
 let preparing = null;
@@ -1183,12 +1205,12 @@ async function prepare(){
       const worker = async ()=>{ while(next<jobs.length){ const i=next++; bufs[i]=await loadAyahAudio(jobs[i].s, jobs[i].a); done++; setStatus("جاري تحميل التلاوة… "+done+" / "+jobs.length); } };
       await Promise.all([worker(),worker(),worker(),worker()]);
       // قصّ الصمت من أول كل ملف وآخره حتى تتصل الآيات بلا انقطاع
-      let t = 0.4; const JOIN = 0; // بلا أي فاصل بين الآيتين
+      let t = 0.4; // الآيات تتداخل بتلاشٍ متساوي القدرة (XF) بلا أي صمت بينها
       jobs.forEach((j,i)=>{ const b=bufs[i]; const tr=trimOf(b); const d=tr.end-tr.start;
         plan.push({buffer:b, at:t, offset:tr.start, dur:d});
         items.push({kind:j.kind, num:j.kind==="ayah"?j.num:null, verse:j.verse, tafsir:j.tafsir, trans:j.trans, start:t, end:t+d});
-        t += d + JOIN; });
-      total = t - JOIN + 0.7;
+        t += d - XF; });
+      total = t + XF + 0.7;
     } else {
       if (!uploadBuf) throw new Error("اختر ملف الصوت أولاً");
       if (!segments.length) throw new Error("قسّم الآيات أولاً (تلقائي أو يدوي)");
@@ -1414,11 +1436,12 @@ function drawFrame(ctx, W, H, t, items, total){
 }
 
 /* ---------------- المقاسات ---------------- */
+const ASPECTS = {"16:9":[16,9], "4:3":[4,3], "1:1":[1,1], "4:5":[4,5], "3:4":[3,4], "9:16":[9,16]};
 function dims(kind){
   const q = kind==="preview" ? 540 : (S.quality==="720"?720:1080);
-  if (S.aspect==="9:16") return [q, Math.round(q*16/9/2)*2];
-  if (S.aspect==="1:1") return [q, q];
-  return [Math.round(q*16/9/2)*2, q];
+  const [a,b] = (ASPECTS[S.aspect] || ASPECTS["16:9"]);
+  if (a>=b) return [Math.round(q*a/b/2)*2, Math.round(q/2)*2];
+  return [Math.round(q/2)*2, Math.round(q*b/a/2)*2];
 }
 const pv = $("preview"), pctx = pv.getContext("2d");
 function sizePreview(){ const [w,h]=dims("preview"); if (pv.width!==w||pv.height!==h){ pv.width=w; pv.height=h; } }
