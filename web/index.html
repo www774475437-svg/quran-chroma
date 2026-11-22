@@ -1128,43 +1128,48 @@ async function loadAyahAudio(surah, ayah){
 const trimCache = new WeakMap();
 /* مدة التداخل بين كل آية والتي تليها (ثانية): تتلاشى الأولى وتظهر الثانية بقدرة ثابتة، فلا يبقى صمت ولا نقرة */
 const XF = 0.03;
-/* ضغط ناعم: يبقي الصوت واضحاً وأقوى دون تشويه حاد */
-function softClip(v){ const k = 0.72, a = Math.abs(v); if (a <= k) return v; const s = 1-k; const y = k + s*Math.tanh((a-k)/s); return v<0 ? -y : y; }
-/* يدمج كل المقاطع في مسار واحد نظيف: تداخل متساوي القدرة بين الآيات، وتسوية مستوى كل آية، وضغط ناعم، وحدّ أعلى للقمة */
-function renderPlan(plan, total){
-  const ctx = getCtx(); const sr = 44100, TARGET = 0.13, FADE = Math.round(0.012*sr), XFN = Math.round(XF*sr);
+/* يدمج كل الآيات في مسار واحد عبر محرك الصوت في المتصفح (إعادة أخذ عينات دقيقة) بالخطوات التالية:
+   - تداخل متساوي القدرة بين كل آيتين (بلا صمت ولا نقرة)
+   - تسوية مستوى كل آية بقياس صوتها وحده
+   - إزالة الانحراف الصفري (DC) والهمهمة المنخفضة
+   - ضغط ناعم لرفع الوضوح، ثم حدّ أعلى يمنع التشويش */
+async function renderPlan(plan, total){
+  const sr = 44100, TARGET = 0.13, FADE = 0.012;
   const len = Math.max(1, Math.ceil(total*sr));
-  const out = ctx.createBuffer(1, len, sr); const o = out.getChannelData(0);
+  const off = new OfflineAudioContext(1, len, sr);
+  const hp = off.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 35; hp.Q.value = 0.707;
+  const comp = off.createDynamicsCompressor(); comp.threshold.value = -20; comp.knee.value = 10; comp.ratio.value = 2.5; comp.attack.value = 0.008; comp.release.value = 0.15;
+  const lim = off.createDynamicsCompressor(); lim.threshold.value = -1.5; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.06;
+  hp.connect(comp); comp.connect(lim); lim.connect(off.destination);
   plan.forEach((p, idx) => {
     const src = p.buffer; if (!src) return;
+    // مستوى هذه الآية وحدها
     const chs = []; for (let c=0;c<src.numberOfChannels;c++) chs.push(src.getChannelData(c));
-    const ratio = src.sampleRate / sr;
-    const n = Math.round(p.dur*sr), startOut = Math.round(p.at*sr), base = p.offset*src.sampleRate;
-    const sample = si => { const i0 = Math.floor(si); if (i0+1 >= src.length) return null; const f = si - i0; let v=0; for (const ch of chs) v += ch[i0]*(1-f) + ch[i0+1]*f; return v/chs.length; };
-    let e2 = 0, cnt = 0;
-    for (let i=0;i<n;i+=4){ const v = sample(base + i*ratio); if (v===null) break; e2 += v*v; cnt++; }
-    const rms = cnt ? Math.sqrt(e2/cnt) : 0;
+    const base = Math.round(p.offset*src.sampleRate), cnt = Math.round(p.dur*src.sampleRate);
+    let e2 = 0, k = 0;
+    for (let i=0;i<cnt;i+=4){ const si = base+i; if (si>=src.length) break; let v=0; for (const ch of chs) v += ch[si]; v/=chs.length; e2 += v*v; k++; }
+    const rms = k ? Math.sqrt(e2/k) : 0;
     const gain = rms > 0.0005 ? Math.min(2.2, Math.max(0.5, TARGET/rms)) : 1;
-    const seg = new Float32Array(n);
-    for (let i=0;i<n;i++){
-      const v = sample(base + i*ratio); if (v===null) break;
-      let env = 1;
-      if (idx===0 && i < FADE) env = i/FADE;
-      if (idx===plan.length-1 && n-i < FADE) env = Math.min(env, (n-i)/FADE);
-      seg[i] = v*gain*env;
-    }
-    for (let i=0;i<n;i++){
-      const oi = startOut + i; if (oi < 0 || oi >= len) break;
-      if (idx>0 && i < XFN){
-        const th = (i+0.5)/XFN*Math.PI/2;
-        o[oi] = o[oi]*Math.cos(th) + seg[i]*Math.sin(th);
-      } else o[oi] += seg[i];
-    }
+    // غلاف الصوت: تلاشٍ عند الحافتين، وتداخل مع الآية السابقة واللاحقة
+    const fin = idx===0 ? FADE : XF, fout = idx===plan.length-1 ? FADE : XF;
+    const at = p.at, end = p.at + p.dur;
+    const curveIn = new Float32Array(128), curveOut = new Float32Array(128);
+    for (let q=0;q<128;q++){ const th = q/127*Math.PI/2; curveIn[q] = gain*Math.sin(th); curveOut[q] = gain*Math.cos(th); }
+    const node = off.createBufferSource(); node.buffer = src;
+    const g = off.createGain();
+    g.gain.setValueAtTime(0, at);
+    g.gain.setValueCurveAtTime(curveIn, at, fin);
+    g.gain.setValueAtTime(gain, at + fin);
+    g.gain.setValueCurveAtTime(curveOut, end - fout, fout);
+    g.gain.setValueAtTime(0, end);
+    node.connect(g); g.connect(hp);
+    node.start(at, p.offset, p.dur);
   });
-  for (let i=0;i<len;i++) o[i] = softClip(o[i]);
-  let peak = 0; for (let i=0;i<len;i++){ const a = Math.abs(o[i]); if (a > peak) peak = a; }
-  if (peak > 0.95){ const k = 0.95/peak; for (let i=0;i<len;i++) o[i] *= k; }
-  return out;
+  const rendered = await off.startRendering();
+  const o = rendered.getChannelData(0);
+  let peak = 0; for (let i=0;i<o.length;i++){ const a = Math.abs(o[i]); if (a > peak) peak = a; }
+  if (peak > 0.95){ const k = 0.95/peak; for (let i=0;i<o.length;i++) o[i] *= k; }
+  return rendered;
 }
 function trimOf(buf){
   let r = trimCache.get(buf); if (r) return r;
@@ -1227,7 +1232,7 @@ async function prepare(){
       total = clipEnd - clipStart;
       plan.push({buffer:uploadBuf, at:0, offset:clipStart, dur:total});
     }
-    plan = [{buffer: renderPlan(plan, total), at:0, offset:0, dur:total}];
+    plan = [{buffer: await renderPlan(plan, total), at:0, offset:0, dur:total}];
     project = {key, items, plan, total};
     layoutCache.clear();
     setStatus("جاهز ✓ — "+items.length+" مقطع، المدة "+fmt(total), "ok");
