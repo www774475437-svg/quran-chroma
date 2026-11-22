@@ -37,7 +37,9 @@ header .dev{font-size:12px;color:var(--muted)}
 header a{color:var(--accent);text-decoration:none;font-size:12px;border:1px solid var(--line);padding:6px 10px;border-radius:999px;white-space:nowrap}
 .stage{position:sticky;top:0;z-index:5;background:var(--bg);padding:6px 12px 8px;border-bottom:1px solid var(--line)}
 .canvasWrap{display:flex;justify-content:center;align-items:center;background:#000;border-radius:14px;overflow:hidden;border:1px solid var(--line)}
-#preview{display:block;max-width:100%;max-height:46vh;width:auto;height:auto}
+#preview{display:block;max-width:100%;max-height:46vh;width:auto;height:auto;outline:2px solid #ff3b30;outline-offset:0;box-shadow:0 0 0 1px rgba(255,59,48,.35)}
+.canvasWrap{position:relative}
+.sizeTag{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);white-space:nowrap;background:rgba(0,0,0,.7);color:#ff3b30;font-size:12px;font-weight:700;padding:3px 8px;border-radius:8px;pointer-events:none;direction:rtl}
 .controls{display:flex;align-items:center;gap:10px;margin-top:8px}
 .playBtn{width:46px;height:46px;border-radius:50%;border:none;background:var(--accent);color:#000;font-size:20px;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer}
 .playBtn:disabled{opacity:.5}
@@ -344,7 +346,7 @@ details.grp>.grpBody>.card{margin:0 0 10px}
 
 <div class="layout">
 <section class="stage">
-  <div class="canvasWrap"><canvas id="preview" width="960" height="540"></canvas></div>
+  <div class="canvasWrap"><canvas id="preview" width="960" height="540"></canvas><div class="sizeTag" id="sizeTag"></div></div>
   <div class="controls">
     <button class="skipBtn" id="back5" aria-label="رجوع ٥ ثوانٍ"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.2 14.5A8 8 0 1 0 6.3 6.6"/><path d="M3.4 3.6v4.6h4.6"/><text x="12" y="15.4" text-anchor="middle" font-size="7.4" font-weight="700" fill="currentColor" stroke="none" font-family="system-ui,sans-serif">5</text></svg></button>
     <button class="playBtn" id="playBtn" aria-label="تشغيل">▶</button>
@@ -1444,7 +1446,11 @@ function dims(kind){
   return [Math.round(q/2)*2, Math.round(q*b/a/2)*2];
 }
 const pv = $("preview"), pctx = pv.getContext("2d");
-function sizePreview(){ const [w,h]=dims("preview"); if (pv.width!==w||pv.height!==h){ pv.width=w; pv.height=h; } }
+function sizePreview(){
+  const [w,h]=dims("preview"); if (pv.width!==w||pv.height!==h){ pv.width=w; pv.height=h; }
+  const [ew,eh]=dims("export"); const tag=$("sizeTag");
+  if (tag) tag.textContent = "المقاس "+S.aspect+" — الفيديو الناتج "+ew+"×"+eh;
+}
 
 /* ---------------- الخطوط ---------------- */
 async function ensureFonts(){
