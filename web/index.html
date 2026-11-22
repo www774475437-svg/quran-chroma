@@ -1116,6 +1116,32 @@ async function loadAyahAudio(surah, ayah){
 
 /* حدود الصوت الفعلي داخل ملف الآية (بدون الصمت في أوله وآخره) */
 const trimCache = new WeakMap();
+/* يدمج كل المقاطع في مسار واحد نظيف: تلاشٍ قصير عند كل وصلة (بلا نقرات)، وتسوية مستوى كل آية، وحدّ أعلى لمنع التشويش */
+function renderPlan(plan, total){
+  const ctx = getCtx(); const sr = 44100, TARGET = 0.1, FADE = Math.round(0.012*sr);
+  const len = Math.max(1, Math.ceil(total*sr));
+  const out = ctx.createBuffer(1, len, sr); const o = out.getChannelData(0);
+  for (const p of plan){
+    const src = p.buffer; if (!src) continue;
+    const chs = []; for (let c=0;c<src.numberOfChannels;c++) chs.push(src.getChannelData(c));
+    const ratio = src.sampleRate / sr;
+    const n = Math.round(p.dur*sr), startOut = Math.round(p.at*sr), base = p.offset*src.sampleRate;
+    const sample = si => { const i0 = Math.floor(si); if (i0+1 >= src.length) return null; const f = si - i0; let v=0; for (const ch of chs) v += ch[i0]*(1-f) + ch[i0+1]*f; return v/chs.length; };
+    let e2 = 0, cnt = 0;
+    for (let i=0;i<n;i+=4){ const v = sample(base + i*ratio); if (v===null) break; e2 += v*v; cnt++; }
+    const rms = cnt ? Math.sqrt(e2/cnt) : 0;
+    const gain = rms > 0.0005 ? Math.min(2.5, Math.max(0.5, TARGET/rms)) : 1;
+    for (let i=0;i<n;i++){
+      const oi = startOut + i; if (oi < 0 || oi >= len) break;
+      const v = sample(base + i*ratio); if (v===null) break;
+      let env = 1; if (i < FADE) env = i/FADE; if (n-i < FADE) env = Math.min(env, (n-i)/FADE);
+      o[oi] += v*gain*env;
+    }
+  }
+  let peak = 0; for (let i=0;i<len;i++){ const a = Math.abs(o[i]); if (a > peak) peak = a; }
+  if (peak > 0.95){ const k = 0.95/peak; for (let i=0;i<len;i++) o[i] *= k; }
+  return out;
+}
 function trimOf(buf){
   let r = trimCache.get(buf); if (r) return r;
   const sr = buf.sampleRate, win = Math.max(1, Math.round(sr*0.01)), n = Math.floor(buf.length/win);
@@ -1177,6 +1203,7 @@ async function prepare(){
       total = clipEnd - clipStart;
       plan.push({buffer:uploadBuf, at:0, offset:clipStart, dur:total});
     }
+    plan = [{buffer: renderPlan(plan, total), at:0, offset:0, dur:total}];
     project = {key, items, plan, total};
     layoutCache.clear();
     setStatus("جاهز ✓ — "+items.length+" مقطع، المدة "+fmt(total), "ok");
