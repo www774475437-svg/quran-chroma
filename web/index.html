@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#12110e">
 <title>القرآن كروما</title>
 <link rel="manifest" href="manifest.webmanifest">
@@ -92,6 +92,7 @@ video.result{width:100%;border-radius:12px;margin-top:10px;background:#000}
 .switch input{width:22px;height:22px;accent-color:var(--accent)}
 .layout{display:block}
 #preview{touch-action:none;cursor:default}
+html,body{touch-action:manipulation}
 #preview.drag{cursor:grab}
 .statGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:min(92vw,560px);margin-top:12px}
 .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
@@ -2122,6 +2123,11 @@ for (const k of ["fVerse","fTafsir","fTrans"]) $(k).addEventListener("change", a
 for (const k of ["sVerse","sTafsir","sTrans"]) $(k).addEventListener("input", ()=>{ S[k]=+$(k).value; $(k+"V").textContent=S[k]; saveSettings(); layoutCache.clear(); if (!playing) renderStill(); });
 $("monitor").addEventListener("change", ()=>{ S.monitor = $("monitor").checked; saveSettings(); });
 
+/* منع تكبير الصفحة بإصبعين (iOS يتجاهل user-scalable)، ويبقى التكبير داخل مخطط الموجة */
+const inWave = t => !!(t && t.closest && t.closest("#tlCanvas"));
+document.addEventListener("gesturestart", e=>{ if (!inWave(e.target)) e.preventDefault(); }, {passive:false});
+document.addEventListener("gesturechange", e=>{ if (!inWave(e.target)) e.preventDefault(); }, {passive:false});
+document.addEventListener("touchmove", e=>{ if (e.touches.length>1 && !inWave(e.target)) e.preventDefault(); }, {passive:false});
 window.addEventListener("error", e=>{ console.error(e.error||e.message); });
 window.addEventListener("unhandledrejection", e=>{ console.error(e.reason); });
 document.addEventListener("visibilitychange", ()=>{ if (document.hidden && exporting) setStatus("⚠️ ارجع إلى الصفحة! صناعة الفيديو تحتاج أن تبقى الصفحة ظاهرة.", "err"); });
