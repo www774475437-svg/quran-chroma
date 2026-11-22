@@ -248,6 +248,41 @@ details.grp>.grpBody>.card{margin:0 0 10px}
 .stat{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
 .stat b{display:block;font-size:20px}
 .stat span{font-size:12px;color:var(--muted)}
+
+/* الإعدادات: صفوف منظمة مثل التطبيقات الكبيرة */
+.setTitle{font-size:13px;font-weight:800;color:var(--muted);margin:20px 8px 8px}
+.setGroup{background:var(--panel);border:1px solid var(--line);border-radius:22px;overflow:hidden;margin-bottom:4px}
+.setRow{display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;padding:13px 14px;background:none;border:none;border-bottom:1px solid var(--line);color:var(--text);font:inherit;text-align:right;cursor:pointer;text-decoration:none}
+.setRow:last-child{border-bottom:none}
+.setRow .tx{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.setRow .tx b{font-size:15px;font-weight:700}
+.setRow .tx small{font-size:12.5px;color:var(--muted)}
+.setRow .ico,.meAv{width:38px;height:38px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;color:var(--accent);flex:none}
+.setRow .ico svg{width:19px;height:19px}
+.setRow .chev,.meRow .chev{color:var(--muted);font-size:22px;flex:none}
+.meRow{display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:26px;padding:16px;color:var(--text);font:inherit;text-align:right;cursor:pointer;margin-bottom:4px}
+.meRow .meAv{width:54px;height:54px;font-size:22px;font-weight:800;background:var(--accent);color:var(--onaccent)}
+.meRow .tx{flex:1;display:flex;flex-direction:column;gap:3px}
+.meRow .tx b{font-size:17px}
+.meRow .tx small{font-size:13px;color:var(--muted)}
+/* الصفحة الشخصية */
+.pfTop{display:flex;align-items:center;justify-content:space-between;margin:4px 0 14px}
+.pfTop b{font-size:17px}
+.iconBtn{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.pfHero{background:var(--panel);border:1px solid var(--line);border-radius:26px;padding:22px 16px 18px;text-align:center}
+.pfAv{width:88px;height:88px;border-radius:50%;margin:0 auto;background:linear-gradient(135deg,var(--accent),#8c4a2f);color:var(--onaccent);display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:800}
+.pfName{font-size:20px;font-weight:800;margin-top:12px}
+.pfId{background:none;border:none;color:var(--accent);font:inherit;font-size:14px;margin-top:4px;cursor:pointer}
+.pfBadges{display:flex;gap:8px;justify-content:center;margin:10px 0 0}
+.chip{font-size:12px;padding:5px 12px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--panel2)}
+.pfStats{display:flex;margin:18px 0 16px;border-top:1px solid var(--line);padding-top:14px}
+.pfStats div{flex:1}
+.pfStats b{display:block;font-size:20px}
+.pfStats span{font-size:12px;color:var(--muted)}
+.pfGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:14px}
+.pfTile{position:relative;aspect-ratio:9/16;border:none;padding:0;border-radius:10px;overflow:hidden;background:#000;cursor:pointer}
+.pfTile video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.pfTile .cnt{position:absolute;bottom:6px;right:6px;left:6px;color:#fff;font-size:12px;font-weight:700;text-shadow:0 1px 4px #000;text-align:right}
 </style>
 </head>
 <body>
@@ -529,16 +564,29 @@ details.grp>.grpBody>.card{margin:0 0 10px}
 
   <!-- ========== الإعدادات ========== -->
   <div class="panel" id="p-settings">
-    <div class="card">
-      <h3>التواصل</h3>
-      <a class="btn primary" href="https://t.me/alhsaar4" target="_blank" rel="noopener">✉️ تواصل مع المطوّر</a>
-      <div class="hint">تطوير: أبو عبد الرحمن أحمد الأثري</div>
+    <button class="meRow" id="setMe" type="button">
+      <span class="meAv">أ</span>
+      <span class="tx"><b class="meName">—</b><small class="meId">—</small></span>
+      <span class="chev">‹</span>
+    </button>
+
+    <div class="setTitle">الحساب</div>
+    <div class="setGroup">
+      <button class="setRow" id="setProfile" type="button"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span><span class="tx"><b>صفحتي الشخصية</b><small>مقاطعي واسمي ورقمي</small></span><span class="chev">‹</span></button>
+      <button class="setRow" id="setLikes" type="button"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></span><span class="tx"><b>ما أعجبني</b><small id="setLikesSub">0 مقطع</small></span><span class="chev">‹</span></button>
     </div>
-    <div class="card">
-      <h3>الحساب</h3>
-      <button class="btn" id="setProfile">👤 صفحتي في المقاطع</button>
-      <div class="hint">تظهر صفحتك بعد ربط الحساب.</div>
+
+    <div class="setTitle">التطبيق</div>
+    <div class="setGroup">
+      <a class="setRow" id="apkRow" href="https://github.com/www774475437-svg/quran-chroma/releases/latest/download/quran-chroma.apk" style="display:none"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 20h16"/></svg></span><span class="tx"><b>تحميل تطبيق الأندرويد</b><small>ملف APK للتثبيت المباشر</small></span><span class="chev">‹</span></a>
+      <a class="setRow" href="https://t.me/alhsaar4" target="_blank" rel="noopener"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m22 2-11 11M22 2l-7 20-4-9-9-4z"/></svg></span><span class="tx"><b>تواصل مع المطوّر</b><small>عبر تيليجرام</small></span><span class="chev">‹</span></a>
     </div>
+
+    <div class="setTitle">القرآن والعرض</div>
+    <div id="setGroups"></div>
+
+    <div class="hint" style="margin-top:14px;text-align:center">تُحفظ الإعدادات والمفضلة والحساب في هذا الجهاز فقط.</div>
+    <footer>تطوير: أبو عبد الرحمن أحمد الأثري · <a href="https://t.me/alhsaar4" target="_blank" rel="noopener">تيليجرام</a><br>النصوص من alquran.cloud · التلاوات من everyayah.com</footer>
   </div>
 
   <!-- ========== المقاطع ========== -->
@@ -585,25 +633,36 @@ details.grp>.grpBody>.card{margin:0 0 10px}
     <div class="hint" id="reelsEmpty" style="display:none;text-align:center;padding:30px 0">لا توجد مقاطع في هذا التصنيف بعد.</div>
   </div>
 
-  <!-- ========== الحساب ========== -->
+  <!-- ========== الصفحة الشخصية ========== -->
   <div class="panel" id="p-profile">
-    <div class="card profileHead">
-      <div class="avatarBig">ح</div>
-      <div>
-        <div class="pfName">حسابي</div>
-        <div class="hint">سجّل الدخول بعد ربط الخادم لتظهر مقاطعك هنا.</div>
+    <div class="pfTop">
+      <button class="iconBtn" id="pfBack" type="button" aria-label="رجوع">›</button>
+      <b>صفحتي الشخصية</b>
+      <button class="iconBtn" id="pfSettings" type="button" aria-label="الإعدادات">⚙</button>
+    </div>
+    <div class="pfHero">
+      <div class="pfAv" id="pfAv">أ</div>
+      <div class="pfName" id="pfName">—</div>
+      <button class="pfId" id="pfIdBtn" type="button">رقمي: <span id="pfIdNum">—</span> · نسخ</button>
+      <div class="pfBadges"><span class="chip">محفوظ على هذا الجهاز</span></div>
+      <div class="pfStats">
+        <div><b id="pfVids">0</b><span>مقاطع</span></div>
+        <div><b id="pfLikes">0</b><span>إعجاب</span></div>
+        <div><b id="pfDays">1</b><span>يوم في التطبيق</span></div>
+      </div>
+      <button class="btn small" id="pfEdit" type="button">✏️ تعديل الاسم</button>
+      <div id="pfNameEdit" style="display:none;margin-top:10px">
+        <input id="pfNameIn" maxlength="40" style="width:100%;box-sizing:border-box;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font:inherit">
+        <button class="btn primary" id="pfNameSave" type="button">حفظ الاسم</button>
       </div>
     </div>
-    <div class="statRow">
-      <div class="stat"><b id="pfCount">0</b><span>مقطع منشور</span></div>
-      <div class="stat"><b>—</b><span>تاريخ الانضمام</span></div>
+    <div class="seg" id="pfTabs" style="margin-top:16px">
+      <button data-v="mine" class="on">مقاطعي</button>
+      <button data-v="likes">أعجبني</button>
     </div>
-    <div class="card">
-      <h3>مقاطعي</h3>
-      <div class="hint">لم تنشر أي مقطع بعد.</div>
-    </div>
-    <button class="btn" id="pfSettings">⚙️ الإعدادات</button>
-    <button class="btn" id="pfBack">← رجوع إلى المقاطع</button>
+    <div class="pfGrid" id="pfGrid"></div>
+    <div class="hint" id="pfEmpty" style="display:none;text-align:center;padding:24px 0"></div>
+    <div class="hint" style="text-align:center">المقاطع المعروضة نماذج للعرض، والنشر الحقيقي يُفعَّل بعد ربط الخادم.</div>
   </div>
 
   <!-- ========== تصدير ========== -->
@@ -628,12 +687,6 @@ details.grp>.grpBody>.card{margin:0 0 10px}
       </div>
     </div>
   </div>
-  <div class="card" id="apkCard" style="display:none;text-align:center">
-    <h3>📱 تطبيق الأندرويد</h3>
-    <a class="btn primary" href="https://github.com/www774475437-svg/quran-chroma/releases/latest/download/quran-chroma.apk" style="text-decoration:none">⬇️ تحميل التطبيق (APK)</a>
-    <div class="hint">حمّل الملف ثم افتحه للتثبيت. إذا طلب الجوال السماح بالتثبيت من مصادر أخرى فاسمح به.</div>
-  </div>
-  <footer>تطوير: أبو عبد الرحمن أحمد الأثري · <a href="https://t.me/alhsaar4" target="_blank" rel="noopener">تيليجرام</a><br>النصوص من alquran.cloud · التلاوات من everyayah.com</footer>
 </main>
 <nav class="tabs" id="tabs" style="order:1">
   <button data-p="p-ayat" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h6M8 11h6"/></svg>القرآن</button>
@@ -2197,7 +2250,7 @@ document.querySelectorAll("#reelsType button").forEach(b=>b.addEventListener("cl
   filterReels(b.dataset.v);
 }));
 const LIKES = (()=>{ try{ return JSON.parse(localStorage.getItem("qc_likes")||"{}"); }catch(e){ return {}; } })();
-function paintLikes(){ document.querySelectorAll(".likeBtn").forEach(b=>b.classList.toggle("on", !!LIKES[b.dataset.id])); }
+function paintLikes(){ document.querySelectorAll(".likeBtn").forEach(b=>b.classList.toggle("on", !!LIKES[b.dataset.id])); if (window.__profReady) paintProfile(); }
 document.querySelectorAll(".likeBtn").forEach(b=>b.addEventListener("click", ()=>{
   LIKES[b.dataset.id] = !LIKES[b.dataset.id];
   try{ localStorage.setItem("qc_likes", JSON.stringify(LIKES)); }catch(e){}
@@ -2220,9 +2273,82 @@ const reelIO = new IntersectionObserver(es=>es.forEach(e=>{
   if (e.isIntersecting && e.intersectionRatio >= 0.6) v.play().catch(()=>{}); else v.pause();
 }), {root: $("feed"), threshold:[0, 0.6]});
 document.querySelectorAll(".reel video").forEach(v=> reelIO.observe(v));
-$("avatarBtn").addEventListener("click", ()=> showTab("p-profile"));
+/* الحساب والصفحة الشخصية: اسم ورقم محليان، وإحصاءات حقيقية من الإعجابات */
+const PROF = (()=>{
+  let p = {}; try{ p = JSON.parse(localStorage.getItem("qc_profile")||"{}"); }catch(e){}
+  if (!p.id)    p.id = String(1000000 + Math.floor(Math.random()*8999999));
+  if (!p.name)  p.name = "أبو عبد الرحمن الأثري";
+  if (!p.since) p.since = Date.now();
+  try{ localStorage.setItem("qc_profile", JSON.stringify(p)); }catch(e){}
+  return p;
+})();
+function saveProf(){ try{ localStorage.setItem("qc_profile", JSON.stringify(PROF)); }catch(e){} }
+let pfMode = "mine";
+function paintProfile(){
+  const ini = (PROF.name.trim()[0] || "ح");
+  const liked = Object.values(LIKES).filter(Boolean).length;
+  document.querySelectorAll(".meAv").forEach(e=> e.textContent = ini);
+  document.querySelectorAll(".meName").forEach(e=> e.textContent = PROF.name);
+  document.querySelectorAll(".meId").forEach(e=> e.textContent = "رقمي: " + PROF.id);
+  $("avatarBtn").textContent = ini;
+  $("pfAv").textContent = ini;
+  $("pfName").textContent = PROF.name;
+  $("pfIdNum").textContent = PROF.id;
+  $("pfVids").textContent = document.querySelectorAll(".reel").length;
+  $("pfLikes").textContent = liked;
+  $("pfDays").textContent = Math.max(1, Math.floor((Date.now() - PROF.since) / 86400000) + 1);
+  $("setLikesSub").textContent = liked + " مقطع";
+  renderPfGrid();
+}
+function renderPfGrid(){
+  const g = $("pfGrid"); g.innerHTML = "";
+  const items = [...document.querySelectorAll(".reel")].filter(r => pfMode === "mine" || LIKES[r.querySelector(".likeBtn").dataset.id]);
+  for (const r of items){
+    const id = r.querySelector(".likeBtn").dataset.id;
+    const t = document.createElement("button"); t.className = "pfTile"; t.type = "button";
+    const v = document.createElement("video"); v.muted = true; v.playsInline = true; v.preload = "metadata"; v.src = r.querySelector("video").getAttribute("src"); v.addEventListener("loadedmetadata", ()=>{ try{ v.currentTime = 0.1; }catch(e){} });
+    const c = document.createElement("span"); c.className = "cnt"; c.textContent = LIKES[id] ? "♥ أعجبني" : "نموذج";
+    t.append(v, c);
+    t.addEventListener("click", ()=>{ showTab("p-reels"); r.scrollIntoView({block:"start"}); });
+    g.appendChild(t);
+  }
+  $("pfEmpty").style.display = items.length ? "none" : "";
+  $("pfEmpty").textContent = pfMode === "mine" ? "لا توجد مقاطع بعد." : "لم تُعجب بأي مقطع بعد.";
+}
+document.querySelectorAll("#pfTabs button").forEach(b=> b.addEventListener("click", ()=>{
+  pfMode = b.dataset.v;
+  document.querySelectorAll("#pfTabs button").forEach(x=> x.classList.toggle("on", x === b));
+  renderPfGrid();
+}));
+function openProfile(mode){
+  pfMode = mode;
+  document.querySelectorAll("#pfTabs button").forEach(x=> x.classList.toggle("on", x.dataset.v === mode));
+  renderPfGrid();
+  showTab("p-profile");
+}
+$("avatarBtn").addEventListener("click", ()=> openProfile("mine"));
+$("setMe").addEventListener("click", ()=> openProfile("mine"));
+$("setProfile").addEventListener("click", ()=> openProfile("mine"));
+$("setLikes").addEventListener("click", ()=> openProfile("likes"));
 $("pfBack").addEventListener("click", ()=> showTab("p-reels"));
 $("pfSettings").addEventListener("click", ()=> showTab("p-settings"));
+$("pfEdit").addEventListener("click", ()=>{
+  const box = $("pfNameEdit"); const open = box.style.display === "none";
+  box.style.display = open ? "" : "none";
+  if (open){ $("pfNameIn").value = PROF.name; $("pfNameIn").focus(); }
+});
+$("pfNameSave").addEventListener("click", ()=>{
+  const v = $("pfNameIn").value.trim();
+  if (v){ PROF.name = v; saveProf(); paintProfile(); }
+  $("pfNameEdit").style.display = "none";
+});
+$("pfIdBtn").addEventListener("click", async ()=>{
+  try{ await navigator.clipboard.writeText(PROF.id); setStatus("تم نسخ الرقم ✓", "ok"); }
+  catch(e){ setStatus("رقمك: " + PROF.id, ""); }
+});
+if (!window.QCBridge) $("apkRow").style.display = "";
+window.__profReady = true;
+paintProfile();
 $("customFolder").addEventListener("change", ()=>{ S.customFolder = $("customFolder").value.trim(); saveSettings(); invalidate(); });
 $("addBasmala").addEventListener("change", ()=>{ S.addBasmala = $("addBasmala").checked; saveSettings(); invalidate(); });
 $("hasIstiadha").addEventListener("change", ()=>{ S.hasIstiadha = $("hasIstiadha").checked; saveSettings(); onRangeChange(); });
@@ -2251,7 +2377,6 @@ window.addEventListener("error", e=>{ console.error(e.error||e.message); });
 window.addEventListener("unhandledrejection", e=>{ console.error(e.reason); });
 document.addEventListener("visibilitychange", ()=>{ if (document.hidden && exporting) setStatus("⚠️ ارجع إلى الصفحة! صناعة الفيديو تحتاج أن تبقى الصفحة ظاهرة.", "err"); });
 
-if (!window.QCBridge) $("apkCard").style.display = "";
 /* ترتيب الأقسام: تُنقل محتويات الأقسام القديمة إلى مجموعات قابلة للطي داخل الأقسام الأربعة (دون تغيير المعرّفات) */
 function groupInto(srcId, targetId, title, open){
   const src = $(srcId), tgt = $(targetId); if (!src || !tgt) return;
@@ -2263,10 +2388,9 @@ function groupInto(srcId, targetId, title, open){
   src.style.display = "none";
 }
 groupInto("p-text", "p-ayat", "النصوص والتفسير والترجمة", false);
-groupInto("p-design", "p-settings", "التصميم والألوان", false);
-groupInto("p-fav", "p-settings", "المفضلة", false);
+groupInto("p-design", "setGroups", "التصميم والألوان", false);
+groupInto("p-fav", "setGroups", "المفضلة", false);
 groupInto("p-export", "p-publish", "صناعة الفيديو", true);
-$("setProfile").addEventListener("click", ()=> showTab("p-reels"));
 fillSurahs(); syncUI(); renderStill();
 restoreUpload().catch(()=>setStatus("تعذّر استعادة الصوت المحفوظ، ارفعه من جديد.", "err"));
 ensureFonts().then(()=>{ layoutCache.clear(); renderStill(); });
