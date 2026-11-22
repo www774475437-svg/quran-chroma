@@ -1,6 +1,6 @@
 // خدمة بسيطة لتثبيت الموقع كتطبيق على الماك والجوال
-const CACHE = "qc-v12";
-const CORE = ["./", "index.html", "fonts/hafs.18.woff2", "icon-192.png", "icon-512.png", "manifest.webmanifest"];
+const CACHE = "qc-v13";
+const CORE = ["./", "index.html", "fonts/hafs.18.woff2", "icon-192.png", "icon-512.png", "manifest.webmanifest", "fonts/Tajawal-Medium.ttf", "fonts/Tajawal-Bold.ttf", "fonts/Poppins-Regular.ttf", "fonts/Poppins-Medium.ttf", "fonts/Amiri-Regular.ttf", "fonts/Amiri-Bold.ttf"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).catch(()=>{})); self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE && k !== "qc-offline-v1").map(k => caches.delete(k))))); self.clients.claim(); });
 self.addEventListener("fetch", e => {
