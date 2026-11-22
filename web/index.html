@@ -291,9 +291,24 @@ details.grp>.grpBody>.card{margin:0 0 10px}
 .pfTile{position:relative;aspect-ratio:9/16;border:none;padding:0;border-radius:10px;overflow:hidden;background:#000;cursor:pointer}
 .pfTile video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
 .pfTile .cnt{position:absolute;bottom:6px;right:6px;left:6px;color:#fff;font-size:12px;font-weight:700;text-shadow:0 1px 4px #000;text-align:right}
+
+/* تطبيق بشاشة كاملة على الجوال: الشريط العلوي والمعاينة والشريط السفلي ثابتة، والمحتوى يتمرر داخل منطقته فقط */
+@media (max-width:979px){
+  html,body{height:100%;overflow:hidden}
+  body{display:flex;flex-direction:column;padding-bottom:0}
+  header{flex:none;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:10px}
+  .layout{flex:1;min-height:0;display:flex;flex-direction:column;padding:0}
+  .side{flex:1;min-height:0;display:flex;flex-direction:column}
+  .stage{position:relative;top:auto;flex:none}
+  main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:12px 14px calc(104px + env(safe-area-inset-bottom))}
+  /* المعاينة والتشغيل للقرآن والنشر فقط */
+  body[data-tab="p-settings"] .stage,
+  body[data-tab="p-reels"] .stage,
+  body[data-tab="p-profile"] .stage{display:none}
+}
 </style>
 </head>
-<body>
+<body data-tab="p-ayat">
 <header>
   <div>
     <h1>القرآن <span>كروما</span></h1>
@@ -306,9 +321,9 @@ details.grp>.grpBody>.card{margin:0 0 10px}
 <section class="stage">
   <div class="canvasWrap"><canvas id="preview" width="960" height="540"></canvas></div>
   <div class="controls">
-    <button class="btn small" id="back5" aria-label="رجوع ٥ ثوانٍ">⏪</button>
+    <button class="btn small" id="back5" aria-label="رجوع ٥ ثوانٍ"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6 8.5 6V6l-8.5 6z"/></svg></button>
     <button class="playBtn" id="playBtn" aria-label="تشغيل">▶</button>
-    <button class="btn small" id="fwd5" aria-label="تقدّم ٥ ثوانٍ">⏩</button>
+    <button class="btn small" id="fwd5" aria-label="تقدّم ٥ ثوانٍ"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg></button>
     <input type="range" class="seek" id="seek" min="0" max="1000" value="0">
     <div class="time" id="timeLbl">0:00 / 0:00</div>
   </div>
@@ -326,7 +341,7 @@ details.grp>.grpBody>.card{margin:0 0 10px}
         <button id="searchClear" aria-label="مسح" style="display:none">✕</button>
       </div>
       <div id="searchResults" class="results" style="display:none"></div>
-      <button class="btn" id="openMushaf" style="margin-top:10px">📖 اختر الآيات من المصحف</button>
+      <button class="btn" id="openMushaf" style="margin-top:10px">اختر الآيات من المصحف</button>
       <label class="f">السورة</label>
       <select id="surah"></select>
       <div class="row">
@@ -349,8 +364,8 @@ details.grp>.grpBody>.card{margin:0 0 10px}
         <div class="hint" style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0">💡 تلاوات القائمة مسجَّلة آيةً آية. إذا أردت صوتاً متصلاً واضحاً بلا أي انقطاع بين الآيات، اختر «صوت أو فيديو من عندي» وارفع تلاوة القارئ من ملفاتك.</div>
         <div class="card" style="margin:8px 0;padding:10px">
           <div class="hint">التنزيل للاستماع بلا إنترنت (قريباً):</div>
-          <button class="btn" id="dlReciter" disabled>⬇️ تنزيل هذا القارئ للسورة المختارة</button>
-          <button class="btn" id="dlMushaf" disabled>⬇️ تنزيل المصحف كاملاً بصوت هذا القارئ</button>
+          <button class="btn" id="dlReciter" disabled>تنزيل هذا القارئ للسورة المختارة</button>
+          <button class="btn" id="dlMushaf" disabled>تنزيل المصحف كاملاً بصوت هذا القارئ</button>
         </div>
         <details>
           <summary class="hint" style="cursor:pointer">قارئ غير موجود في القائمة؟</summary>
@@ -366,15 +381,15 @@ details.grp>.grpBody>.card{margin:0 0 10px}
         <div class="hint" id="fileInfo">يستخرج التطبيق الصوت من الفيديو تلقائياً. اختر السورة والآيات التي يقرؤها القارئ في الملف.</div>
         <div class="switch"><span>يبدأ القارئ بالاستعاذة</span><input type="checkbox" id="hasIstiadha"></div>
         <div class="switch"><span>يبدأ القارئ بالبسملة</span><input type="checkbox" id="hasBasmala"></div>
-        <button class="btn" id="tapSyncBtn" disabled>👆 ضبط يدوي بالنقر مع التلاوة</button>
+        <button class="btn" id="tapSyncBtn" disabled>ضبط يدوي بالنقر مع التلاوة</button>
         <div class="hint">بعد الرفع توزَّع الآيات تلقائياً بحسب طولها. اسحب الخطوط الذهبية لضبط كل آية، أو اضغط آية في الموجة واضبطها وحدها. زر ⏪ و⏩ يرجّع ويقدّم خمس ثوانٍ.</div>
         <div id="tlBox" style="display:none">
           <label class="f">محرّر الصوت — اسحب الخطوط الذهبية لتحديد بداية كل آية ونهايتها</label>
           <div class="tlWrap"><canvas id="tlCanvas"></canvas></div>
           <div class="tlBar">
             <button class="btn small primary" id="tlPlay">▶ تشغيل</button>
-            <button class="btn small" id="tlBack" aria-label="رجوع ٥ ثوانٍ">⏪ ٥</button>
-            <button class="btn small" id="tlFwd" aria-label="تقدّم ٥ ثوانٍ">⏩ ٥</button>
+            <button class="btn small" id="tlBack" aria-label="رجوع ٥ ثوانٍ">٥</button>
+            <button class="btn small" id="tlFwd" aria-label="تقدّم ٥ ثوانٍ">٥</button>
             <button class="btn small" id="tlUndo">↶ تراجع</button>
             <span class="tlTime" id="tlTime">0:00.0</span>
             <button class="btn small" id="tlOut" aria-label="تصغير">➖</button>
@@ -556,7 +571,7 @@ details.grp>.grpBody>.card{margin:0 0 10px}
         <button data-v="16:9" class="on">عرضي</button>
       </div>
     </div>
-    <button class="btn primary" id="publishBtn">🚀 صناعة فيديو جاهز للنشر</button>
+    <button class="btn primary" id="publishBtn">صناعة فيديو جاهز للنشر</button>
     <div class="hint" style="text-align:center">بعد الصناعة تقدر تحمّله أو تشاركه مباشرة في واتساب وغيره.</div>
   </div>
 
@@ -564,7 +579,7 @@ details.grp>.grpBody>.card{margin:0 0 10px}
   <div class="panel" id="p-fav">
     <div class="card">
       <h3>⭐ المفضلة</h3>
-      <button class="btn primary" id="addFav">⭐ حفظ الاختيار الحالي في المفضلة</button>
+      <button class="btn primary" id="addFav">حفظ الاختيار الحالي في المفضلة</button>
       <div id="favList" style="margin-top:8px"></div>
       <div class="hint">تُحفظ المفضلة والإعدادات في هذا الجهاز فقط.</div>
     </div>
@@ -604,7 +619,8 @@ details.grp>.grpBody>.card{margin:0 0 10px}
     <div class="setTitle">التطبيق</div>
     <div class="setGroup">
       <a class="setRow" id="apkRow" href="https://github.com/www774475437-svg/quran-chroma/releases/latest/download/quran-chroma.apk" style="display:none"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 20h16"/></svg></span><span class="tx"><b>تحميل تطبيق الأندرويد</b><small>ملف APK للتثبيت المباشر</small></span><span class="chev">‹</span></a>
-      <a class="setRow" href="https://t.me/alhsaar4" target="_blank" rel="noopener"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m22 2-11 11M22 2l-7 20-4-9-9-4z"/></svg></span><span class="tx"><b>تواصل مع المطوّر</b><small>عبر تيليجرام</small></span><span class="chev">‹</span></a>
+      <div class="setRow" id="installRow" style="display:none"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 8v6m0 0-2.5-2.5M12 14l2.5-2.5"/></svg></span><span class="tx"><b>أضِف التطبيق إلى الشاشة الرئيسية</b><small>من Safari: زر المشاركة ثم «إضافة إلى الشاشة الرئيسية»، فيفتح كتطبيق كامل</small></span></div>
+    <a class="setRow" href="https://t.me/alhsaar4" target="_blank" rel="noopener"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m22 2-11 11M22 2l-7 20-4-9-9-4z"/></svg></span><span class="tx"><b>تواصل مع المطوّر</b><small>عبر تيليجرام</small></span><span class="chev">‹</span></a>
     </div>
 
     <div class="setTitle">القرآن والعرض</div>
@@ -663,7 +679,7 @@ details.grp>.grpBody>.card{margin:0 0 10px}
     <div class="pfTop">
       <button class="iconBtn" id="pfBack" type="button" aria-label="رجوع">›</button>
       <b>صفحتي الشخصية</b>
-      <button class="iconBtn" id="pfSettings" type="button" aria-label="الإعدادات">⚙</button>
+      <button class="iconBtn" id="pfSettings" type="button" aria-label="الإعدادات"></button>
     </div>
     <div class="pfHero">
       <div class="pfAv" id="pfAv">أ</div>
@@ -675,7 +691,7 @@ details.grp>.grpBody>.card{margin:0 0 10px}
         <div><b id="pfLikes">0</b><span>إعجاب</span></div>
         <div><b id="pfDays">1</b><span>يوم في التطبيق</span></div>
       </div>
-      <button class="btn small" id="pfEdit" type="button">✏️ تعديل الاسم</button>
+      <button class="btn small" id="pfEdit" type="button">تعديل الاسم</button>
       <div id="pfNameEdit" style="display:none;margin-top:10px">
         <input id="pfNameIn" maxlength="40" style="width:100%;box-sizing:border-box;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font:inherit">
         <button class="btn primary" id="pfNameSave" type="button">حفظ الاسم</button>
@@ -700,14 +716,14 @@ details.grp>.grpBody>.card{margin:0 0 10px}
         <button data-v="1080" class="on">1080p (أوضح)</button>
       </div>
       <div class="switch"><span>اسمع الصوت أثناء الصناعة</span><input type="checkbox" id="monitor" checked></div>
-      <button class="btn primary" id="exportBtn">🎬 صناعة الفيديو</button>
+      <button class="btn primary" id="exportBtn">صناعة الفيديو</button>
       <button class="btn" id="cancelBtn" style="display:none">إيقاف</button>
       <div class="progress"><div id="prog"></div></div>
       <div class="hint">الصناعة تأخذ نفس مدة التلاوة. اترك الصفحة مفتوحة والشاشة مضاءة حتى تنتهي.</div>
       <div id="resultBox" style="display:none">
         <video class="result" id="resultVideo" controls playsinline></video>
-        <a class="btn green" id="downloadLink" style="text-align:center;text-decoration:none">⬇️ تحميل الفيديو</a>
-        <button class="btn" id="shareBtn" style="display:none">📤 مشاركة (واتساب وغيره)</button>
+        <a class="btn green" id="downloadLink" style="text-align:center;text-decoration:none">تحميل الفيديو</a>
+        <button class="btn" id="shareBtn" style="display:none">مشاركة (واتساب وغيره)</button>
         <div class="hint" id="resultInfo"></div>
       </div>
     </div>
@@ -2215,6 +2231,7 @@ function applyIcon(){
 
 /* ---------------- ربط الواجهة ---------------- */
 function showTab(id){
+  document.body.dataset.tab = id;
   document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active", p.id===id));
   document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on", b.dataset.p===id));
   if (id==="p-settings") renderFavs();
@@ -2378,6 +2395,7 @@ $("pfIdBtn").addEventListener("click", async ()=>{
   catch(e){ setStatus("رقمك: " + PROF.id, ""); }
 });
 if (!window.QCBridge) $("apkRow").style.display = "";
+if (!(window.matchMedia("(display-mode: standalone)").matches || navigator.standalone)) $("installRow").style.display = "";
 window.__profReady = true;
 paintProfile();
 $("customFolder").addEventListener("change", ()=>{ S.customFolder = $("customFolder").value.trim(); saveSettings(); invalidate(); });
