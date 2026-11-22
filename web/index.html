@@ -1182,7 +1182,25 @@ function wrap(ctx, text, maxW){
   if (cur) lines.push(cur);
   return lines;
 }
-function paginate(lines, per){ const pages=[]; for (let i=0;i<lines.length;i+=per) pages.push(lines.slice(i,i+per)); return pages.length?pages:[[]]; }
+function paginate(lines, per){
+  const n = lines.length; if (!n) return [[]];
+  const cnt = Math.ceil(n / per), base = Math.floor(n / cnt), extra = n % cnt;
+  const pages = []; let at = 0;
+  for (let p=0; p<cnt; p++){ const size = base + (p < extra ? 1 : 0); pages.push(lines.slice(at, at+size)); at += size; }
+  return pages;
+}
+/* لا يُترك آخر سطر كلمةً واحدةً وحدها: تُنقل الكلمة الأخيرة من السطر السابق إن اتسع المكان */
+function noOrphan(ctx, ls, maxW, extra){
+  if (ls.length < 2) return ls;
+  const last = ls[ls.length-1];
+  if (last.includes(" ")) return ls;
+  const prev = ls[ls.length-2].split(" ");
+  if (prev.length < 2) return ls;
+  const moved = prev[prev.length-1] + " " + last;
+  if (ctx.measureText(moved).width + (extra||0) > maxW) return ls;
+  ls[ls.length-2] = prev.slice(0,-1).join(" "); ls[ls.length-1] = moved;
+  return ls;
+}
 function fitBlock(ctx, text, maxW, basePx, minRatio, maxLines, weight, fam, fallback, extraLastW){
   if (!text) return null;
   const doWrap = px => {
@@ -1196,7 +1214,7 @@ function fitBlock(ctx, text, maxW, basePx, minRatio, maxLines, weight, fam, fall
         if (w.length > 1){ ls[ls.length-1] = w.slice(0,-1).join(" "); ls.push(w[w.length-1]); }
       }
     }
-    return ls;
+    return noOrphan(ctx, ls, maxW, extraLastW ? extraLastW(px) : 0);
   };
   let px = basePx, lines;
   for (let k=0;k<12;k++){
@@ -1218,7 +1236,7 @@ function getLayout(ctx, item, W, H){
   const markerW = px => (!hafs && S.showNumber && item.num) ? px*1.15 : 0;
   ctx.direction = "rtl";
   const verse = fitBlock(ctx, vText, maxW, S.sVerse*unit, 0.65, portrait?5:3, "normal", S.fVerse, "\"Amiri\", serif", markerW);
-  const tafsir = S.showTafsir && item.tafsir ? fitBlock(ctx, item.tafsir, maxW, S.sTafsir*unit, 0.75, portrait?5:3, "bold", S.fTafsir, "\"Tajawal\", sans-serif") : null;
+  const tafsir = S.showTafsir && item.tafsir ? fitBlock(ctx, item.tafsir, maxW, S.sTafsir*unit, 0.6, portrait?7:4, "bold", S.fTafsir, "\"Tajawal\", sans-serif") : null;
   const lang = (S.trans||"en").split(".")[0];
   const transRtl = RTL_LANGS.includes(lang);
   let trans = null;
