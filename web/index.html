@@ -389,7 +389,8 @@ details.grp>.grpBody>.card{margin:0 0 10px}
         <label class="f">القارئ</label>
         <select id="reciter"></select>
         <div class="switch"><span>إضافة البسملة في البداية</span><input type="checkbox" id="addBasmala"></div>
-        <div class="hint" style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0">💡 تلاوات القائمة مسجَّلة آيةً آية. إذا أردت صوتاً متصلاً واضحاً بلا أي انقطاع بين الآيات، اختر «صوت أو فيديو من عندي» وارفع تلاوة القارئ من ملفاتك.</div>
+        <div class="switch"><span>تلاوة متصلة بلا انقطاع بين الآيات</span><input type="checkbox" id="continuous"></div>
+        <div class="hint" style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0">💡 التلاوة المتصلة تؤخذ من تسجيل السورة كاملاً، فتخرج طبيعية كأنها تسجيل واحد. إن لم تتوفر للقارئ المختار استُعملت تلاوته آيةً آية تلقائياً.</div>
         <div class="card" style="margin:8px 0;padding:10px">
           <div class="hint">التنزيل للاستماع بلا إنترنت (قريباً):</div>
           <button class="btn" id="dlReciter" disabled>تنزيل هذا القارئ للسورة المختارة</button>
@@ -852,7 +853,18 @@ const RECITERS = [
   {name:"علي جابر", folder:"Ali_Jaber_64kbps"},
   {name:"ياسر سلامة", folder:"Yaser_Salamah_128kbps"},
   {name:"محمد الطبلاوي", folder:"Mohammad_al_Tablaway_128kbps"},
-  {name:"أكرم العلاقمي", folder:"Akram_AlAlaqimy_128kbps"}
+  {name:"أكرم العلاقمي", folder:"Akram_AlAlaqimy_128kbps"},
+  {name:"علي الحذيفي", folder:"Hudhaify_128kbps"},
+  {name:"صلاح بو خاطر", folder:"Salaah_AbdulRahmaan_Bukhatir_128kbps"},
+  {name:"عبد الله المطرود", folder:"Abdullah_Matroud_128kbps"},
+  {name:"إبراهيم الأخضر", folder:"Ibrahim_Akhdar_32kbps"},
+  {name:"أيمن سويد", folder:"Ayman_Sowaid_64kbps"},
+  {name:"محمود علي البنا", folder:"Mahmoud_Ali_Al_Banna_32kbps"},
+  {name:"مصطفى إسماعيل", folder:"Mustafa_Ismail_48kbps"},
+  {name:"عبد الباسط عبد الصمد (مجود)", folder:"Abdul_Basit_Mujawwad_128kbps"},
+  {name:"محمود خليل الحصري (مجود)", folder:"Husary_128kbps_Mujawwad"},
+  {name:"عزيز عليلي", folder:"aziz_alili_128kbps"},
+  {name:"سهل ياسين", folder:"Sahl_Yassin_128kbps"}
 ];
 const RTL_LANGS = ["ar","ur","fa","ps","ug","he","dv","ku","sd"];
 const ISTIADHA = "أَعُوذُ بِٱللَّهِ مِنَ ٱلشَّيۡطَٰنِ ٱلرَّجِيمِ";
@@ -1110,7 +1122,7 @@ function buildItemTexts(list){
 }
 function projectKey(){
   if (S.pubSource==="chroma") return JSON.stringify(["chroma", chromaFileKey]);
-  return JSON.stringify([S.surah,S.from,S.to,S.audioMode,S.reciter,S.customFolder,S.addBasmala,S.tafsir,S.trans, S.audioMode==="upload"?[uploadName,segments.map(s=>[s.start,s.end])]:0]);
+  return JSON.stringify([S.continuous!==false,S.surah,S.from,S.to,S.audioMode,S.reciter,S.customFolder,S.addBasmala,S.tafsir,S.trans, S.audioMode==="upload"?[uploadName,segments.map(s=>[s.start,s.end])]:0]);
 }
 async function altAudioUrls(edition, surah){
   const key = "alt|"+edition+"|"+surah;
@@ -1118,6 +1130,169 @@ async function altAudioUrls(edition, surah){
   const j = await fetchWithRetry("https://api.alquran.cloud/v1/surah/"+surah+"/"+edition, "json");
   const urls = {}; for (const a of j.data.ayahs) urls[a.numberInSurah] = [a.audio].concat(a.audioSecondary||[]);
   textCache.set(key, urls); return urls;
+}
+/* ============ التلاوة المتصلة (كما في «المصحف الذكي») ============
+   ملف واحد للسورة كلها من MP3Quran مع توقيت كل آية داخله، فلا توجد وصلات بين الآيات.
+   يُجلب من الملف الجزء المطلوب فقط (طلب نطاق بايتات)، فلا تُحمَّل السورة الطويلة كلها. */
+const MQ_API = "https://mp3quran.net/api/v3/";
+let timedReads = null;
+const normName = s => String(s||"").replace(/[\u064B-\u0652\u0640]/g,"").replace(/[أإآ]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").replace(/\s+/g,"");
+async function loadTimedReads(){
+  if (timedReads) return timedReads;
+  let j = null;
+  try { const c = JSON.parse(localStorage.getItem("qc_reads")||"null"); if (c && Date.now()-c.t < 7*864e5 && c.l && c.l.length) j = c.l; } catch(e){}
+  if (!j){
+    const raw = await fetchWithRetry(MQ_API+"ayat_timing/reads", "json", 2);
+    const list = Array.isArray(raw) ? raw : (raw.reads || raw.data || []);
+    j = [];
+    for (const m of list){
+      let base = String(m.folder_url || m.server || "").trim(); if (!base || m.id==null) continue;
+      if (!base.endsWith("/")) base += "/";
+      base = base.replace(/^http:\/\//, "https://");
+      j.push({id:+m.id, name:String(m.name||"").trim(), rewaya:String(m.rewaya||"").trim(), base});
+    }
+    if (!j.length) throw new Error("قائمة التلاوات المتصلة فارغة");
+    try { localStorage.setItem("qc_reads", JSON.stringify({t:Date.now(), l:j})); } catch(e){}
+  }
+  return timedReads = j;
+}
+/* التلاوة المتصلة للقارئ نفسه إن وُجدت */
+function timedFor(rec, reads){
+  const mujawwad = rec.name.includes("مجود");
+  const parts = rec.name.split("(")[0].trim().split(/\s+/).map(normName).filter(w=>w.length>2);
+  if (!parts.length) return null;
+  const ok = r => { const sub = r.name+" "+r.rewaya; return (mujawwad ? sub.includes("مجود") : !sub.includes("مجود")) && !sub.includes("معلم"); };
+  const rank = l => l.sort((a,b)=> (b.rewaya.includes("حفص")?1:0) - (a.rewaya.includes("حفص")?1:0))[0] || null;
+  const all = reads.filter(r => ok(r) && parts.every(p => normName(r.name).includes(p)));
+  if (all.length) return rank(all);
+  if (parts.length < 2) return null;
+  const fl = reads.filter(r => ok(r) && normName(r.name).includes(parts[0]) && normName(r.name).includes(parts[parts.length-1]));
+  return rank(fl);
+}
+const timingCache = new Map();
+async function loadTiming(read, surah){
+  const key = read.id+"|"+surah; if (timingCache.has(key)) return timingCache.get(key);
+  const raw = await fetchWithRetry(MQ_API+"ayat_timing?surah="+surah+"&read="+read.id, "json", 2);
+  const list = Array.isArray(raw) ? raw : (raw.data || raw.timing || []);
+  const out = list.map(m=>({a:+m.ayah, s:+m.start_time, e:+m.end_time})).filter(x=>isFinite(x.a)&&isFinite(x.s)&&isFinite(x.e)&&x.e>x.s);
+  if (!out.length) throw new Error("لا يوجد توقيت لهذه السورة");
+  timingCache.set(key, out); return out;
+}
+async function fetchRange(url, from, to){
+  const hit = await offlineHit(url, "buf");
+  if (hit) return {buf: hit.slice(from, to+1), whole: true, at: from};
+  let lastErr;
+  for (let i=0;i<2;i++){
+    const ctrl = new AbortController(); const tm = setTimeout(()=>ctrl.abort(), 90000);
+    try{
+      const r = await fetch(url, {headers:{Range:"bytes="+from+"-"+to}, signal:ctrl.signal});
+      if (r.status===416){ clearTimeout(tm); return {buf:new ArrayBuffer(0), at:from}; }
+      if (!r.ok) throw new Error("HTTP "+r.status);
+      if (r.status===200){
+        // الخادم تجاهل النطاق وأرسل الملف كله: يُقبل إن كان صغيراً فقط
+        const len = +r.headers.get("content-length") || 0;
+        if (len > 40e6){ ctrl.abort(); throw new Error("الخادم لا يدعم الجلب الجزئي"); }
+        const b = await r.arrayBuffer(); clearTimeout(tm);
+        return {buf: b.slice(from, to+1), at: from};
+      }
+      const b = await r.arrayBuffer(); clearTimeout(tm);
+      return {buf:b, at:from};
+    }catch(e){ clearTimeout(tm); lastErr = e; await sleep(500); }
+  }
+  throw lastErr;
+}
+/* يقرأ رأس ملف MP3: موضع أول إطار، والمعدل، وجدول Xing إن كان المعدل متغيراً */
+const MP3_BR = {1:[0,32,40,48,56,64,80,96,112,128,160,192,224,256,320], 2:[0,8,16,24,32,40,48,56,64,80,96,112,128,144,160]};
+const MP3_SR = {3:[44100,48000,32000], 2:[22050,24000,16000], 0:[11025,12000,8000]};
+async function mp3Info(url){
+  if (mp3Info.cache.has(url)) return mp3Info.cache.get(url);
+  let {buf} = await fetchRange(url, 0, 65535); let u = new Uint8Array(buf), skip = 0;
+  if (u.length>10 && u[0]===0x49 && u[1]===0x44 && u[2]===0x33){
+    skip = 10 + ((u[6]&127)<<21 | (u[7]&127)<<14 | (u[8]&127)<<7 | (u[9]&127));
+    if (skip > u.length-4096){ u = new Uint8Array((await fetchRange(url, skip, skip+16383)).buf); } else u = u.subarray(skip);
+  }
+  let i = 0, found = false, ver, br, sr, mono;
+  for (; i+4<u.length; i++){
+    if (u[i]!==0xFF || (u[i+1]&0xE0)!==0xE0) continue;
+    ver = (u[i+1]>>3)&3; const layer = (u[i+1]>>1)&3, bi = u[i+2]>>4, si = (u[i+2]>>2)&3;
+    if (ver===1 || layer!==1 || bi===0 || bi===15 || si===3) continue;
+    br = MP3_BR[ver===3?1:2][bi]*1000; sr = MP3_SR[ver][si]; mono = (u[i+3]>>6)===3; found = true; break;
+  }
+  if (!found) throw new Error("ملف التلاوة ليس MP3 معروفاً");
+  const audioStart = skip + i, spf = ver===3 ? 1152 : 576;
+  const info = {audioStart, bps: br/8, toc:null, dur:0, bytes:0};
+  const side = ver===3 ? (mono?17:32) : (mono?9:17), x = i+4+side;
+  const tag = String.fromCharCode(u[x]||0,u[x+1]||0,u[x+2]||0,u[x+3]||0);
+  if (tag==="Xing"){ // معدل متغير
+    const dv = new DataView(u.buffer, u.byteOffset + x); const flags = dv.getUint32(4); let o = 8, frames = 0, bytes = 0;
+    if (flags&1){ frames = dv.getUint32(o); o+=4; } if (flags&2){ bytes = dv.getUint32(o); o+=4; }
+    if (frames && bytes){ info.dur = frames*spf/sr; info.bytes = bytes; info.bps = bytes/info.dur; if (flags&4) info.toc = Array.from(u.subarray(x+o, x+o+100)); }
+  }
+  mp3Info.cache.set(url, info); return info;
+}
+mp3Info.cache = new Map();
+function mp3ByteAt(info, sec){
+  if (sec<=0) return info.audioStart;
+  if (info.toc && info.dur){
+    const pc = Math.min(99.999, sec/info.dur*100), k = Math.floor(pc), a = info.toc[k], b = k<99 ? info.toc[k+1] : 256;
+    return info.audioStart + Math.floor((a + (b-a)*(pc-k))/256*info.bytes);
+  }
+  return info.audioStart + Math.floor(sec*info.bps);
+}
+function mp3TimeAt(info, byte){
+  const rel = Math.max(0, byte - info.audioStart);
+  if (info.toc && info.dur){
+    const f = Math.min(255.999, rel/info.bytes*256); let k = 0; while (k<99 && info.toc[k+1]<=f) k++;
+    const a = info.toc[k], b = k<99 ? info.toc[k+1] : 256;
+    return (k + (b>a ? (f-a)/(b-a) : 0))/100*info.dur;
+  }
+  return rel/info.bps;
+}
+/* يجلب من ملف السورة ما بين الثانيتين ويفكّه؛ يعيد المقطع وزمن بدايته داخل الملف */
+async function loadSpan(url, t0, t1){
+  const info = await mp3Info(url);
+  const b0 = mp3ByteAt(info, Math.max(0, t0-1)), b1 = mp3ByteAt(info, t1+1);
+  const r = await fetchRange(url, b0, b1);
+  if (!r.buf.byteLength) throw new Error("تعذّر جلب التلاوة المتصلة");
+  const buffer = await decode(r.buf);
+  return {buffer, origin: mp3TimeAt(info, b0)};
+}
+/* يبني خطة الصوت والعناصر من التلاوة المتصلة؛ يرمي خطأً إن لم تتوفر، فيُرجع إلى «آية بآية» */
+async function buildContinuous(rec, txt, list){
+  const read = timedFor(rec, await loadTimedReads());
+  if (!read) throw new Error("لا توجد تلاوة متصلة لهذا القارئ");
+  const tm = await loadTiming(read, S.surah);
+  const byA = new Map(tm.map(x=>[x.a, x]));
+  for (const it of list) if (!byA.has(it.num)) throw new Error("توقيت ناقص للآية "+it.num);
+  const url = read.base + pad3(S.surah) + ".mp3";
+  const first = byA.get(list[0].num), last = byA.get(list[list.length-1].num);
+  const wantBas = S.addBasmala && S.surah!==1 && S.surah!==9;
+  let basSeg = null;
+  if (wantBas){
+    const z = byA.get(0);
+    if (z && z.e-z.s > 1500) basSeg = {s:z.s, e:z.e};
+    else { const a1 = byA.get(1); if (a1 && a1.s > 2500) basSeg = {s:0, e:a1.s}; }
+  }
+  const items = [], plan = []; let t = 0.4;
+  const joined = basSeg && list[0].num===1;   // البسملة ملاصقة للآية الأولى: مقطع واحد
+  setStatus("جاري تحميل التلاوة المتصلة…");
+  if (basSeg && !joined){
+    const sp = await loadSpan(url, basSeg.s/1000, basSeg.e/1000);
+    const off = Math.max(0, basSeg.s/1000 - sp.origin), d = Math.min((basSeg.e-basSeg.s)/1000, sp.buffer.duration-off);
+    plan.push({buffer:sp.buffer, at:t, offset:off, dur:d});
+    items.push({kind:"basmala", num:null, verse:txt.basmala, tafsir:"", trans:"", start:t, end:t+d});
+    t += d - XF;
+  }
+  const c0 = (joined ? basSeg.s : first.s)/1000, c1 = last.e/1000;
+  const sp = await loadSpan(url, c0, c1);
+  const off = Math.max(0, c0 - sp.origin), d = Math.min(c1-c0, sp.buffer.duration-off);
+  if (d < (c1-c0)*0.9) throw new Error("الملف المجلوب أقصر من المطلوب");
+  plan.push({buffer:sp.buffer, at:t, offset:off, dur:d});
+  const rel = ms => t + Math.min(d, Math.max(0, ms/1000 - c0));
+  if (joined) items.push({kind:"basmala", num:null, verse:txt.basmala, tafsir:"", trans:"", start:rel(basSeg.s), end:rel(first.s)});
+  list.forEach((it,i)=>{ const x = byA.get(it.num); const nx = i+1<list.length ? byA.get(list[i+1].num) : null;
+    items.push({kind:it.kind, num:it.num, verse:it.verse, tafsir:it.tafsir, trans:it.trans, start:rel(x.s), end:rel(nx ? nx.s : x.e)}); });
+  return {items, plan, total: t + d + 0.7, readName: read.name};
 }
 async function loadAyahAudio(surah, ayah){
   const rec = RECITERS[S.reciter] || RECITERS[0];
@@ -1212,7 +1387,13 @@ async function prepare(){
     const list = buildItemTexts(rangeAyahs(txt));
     if (!list.length) throw new Error("لا توجد آيات");
     let items=[], plan=[], total=0;
-    if (S.audioMode==="reciter"){
+    let contNote = "";
+    if (S.audioMode==="reciter" && S.continuous!==false && !(S.customFolder||"").trim()){
+      try { const c = await buildContinuous(RECITERS[S.reciter]||RECITERS[0], txt, list); items = c.items; plan = c.plan; total = c.total; contNote = " — تلاوة متصلة"; }
+      catch(e){ console.warn("continuous:", e); items = []; plan = []; total = 0; contNote = " — آية بآية (التلاوة المتصلة غير متاحة لهذا الاختيار)"; }
+    }
+    if (S.audioMode==="reciter" && plan.length){ /* جاهزة من التلاوة المتصلة */ }
+    else if (S.audioMode==="reciter"){
       const jobs = [];
       if (S.addBasmala && S.surah!==1 && S.surah!==9) jobs.push({kind:"basmala", verse:txt.basmala, tafsir:"", trans:"", s:1, a:1});
       for (const it of list) jobs.push(Object.assign({}, it, {s:S.surah, a:it.num}));
@@ -1242,7 +1423,7 @@ async function prepare(){
     plan = [{buffer: renderPlan(plan, total), at:0, offset:0, dur:total}];
     project = {key, items, plan, total};
     layoutCache.clear();
-    setStatus("جاهز ✓ — "+items.length+" مقطع، المدة "+fmt(total), "ok");
+    setStatus("جاهز ✓ — "+items.length+" مقطع، المدة "+fmt(total)+contNote, "ok");
     updateTime(0);
     return project;
   })();
@@ -2498,6 +2679,7 @@ function syncUI(){
   $("fromAyah").max = n; $("toAyah").max = n;
   $("fromAyah").value = S.from; $("toAyah").value = S.to;
   $("reciter").value = S.reciter; $("customFolder").value = S.customFolder;
+  $("continuous").checked = S.continuous!==false;
   $("addBasmala").checked = S.addBasmala; $("hasIstiadha").checked = S.hasIstiadha; $("hasBasmala").checked = S.hasBasmala;
   syncSeg("audioMode", S.audioMode);
   $("reciterBox").style.display = S.audioMode==="reciter" ? "" : "none";
@@ -2637,6 +2819,7 @@ window.__profReady = true;
 paintProfile();
 $("customFolder").addEventListener("change", ()=>{ S.customFolder = $("customFolder").value.trim(); saveSettings(); invalidate(); });
 $("addBasmala").addEventListener("change", ()=>{ S.addBasmala = $("addBasmala").checked; saveSettings(); invalidate(); });
+$("continuous").addEventListener("change", ()=>{ S.continuous = $("continuous").checked; saveSettings(); invalidate(); });
 $("hasIstiadha").addEventListener("change", ()=>{ S.hasIstiadha = $("hasIstiadha").checked; saveSettings(); onRangeChange(); });
 $("hasBasmala").addEventListener("change", ()=>{ S.hasBasmala = $("hasBasmala").checked; saveSettings(); onRangeChange(); });
 document.querySelectorAll("[data-toggle]").forEach(c=>c.addEventListener("click", ()=>{ const k=c.dataset.toggle; S[k]=!S[k]; c.classList.toggle("on", S[k]); saveSettings(); layoutCache.clear(); if (!playing) renderStill(); }));
