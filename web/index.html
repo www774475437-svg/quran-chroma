@@ -393,7 +393,7 @@ details.grp>.grpBody>.card{margin:0 0 10px}
         <select id="reciter"></select>
         <div class="switch"><span>إضافة البسملة في البداية</span><input type="checkbox" id="addBasmala"></div>
         <div class="switch"><span>تلاوة متصلة بلا انقطاع بين الآيات</span><input type="checkbox" id="continuous"></div>
-        <div class="hint" style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0">💡 التلاوة المتصلة تؤخذ من تسجيل السورة كاملاً، فتخرج طبيعية كأنها تسجيل واحد. إن لم تتوفر للقارئ المختار استُعملت تلاوته آيةً آية تلقائياً.</div>
+        <div class="hint" style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0">💡 القرّاء والتسجيلات هنا هي نفسها التي في «المصحف الذكي». «التلاوة المتصلة» تؤخذ من تسجيل السورة كاملاً فتخرج طبيعية بلا وصلات، و«آية بآية» تُستعمل تلقائياً إن لم تتوفر.</div>
         <button class="btn small" id="dlReciter" style="width:100%;margin:6px 0">تنزيل السورة للعمل بلا إنترنت ‹</button>
         <details>
           <summary class="hint" style="cursor:pointer">قارئ غير موجود في القائمة؟</summary>
@@ -829,14 +829,14 @@ const AYAH_COUNTS = [7,286,200,176,120,165,206,75,129,109,123,111,43,52,99,128,1
 
 /* القرّاء: مجلد everyayah + (اختياري) نسخة احتياطية من alquran.cloud */
 const RECITERS = [
-  {name:"ماهر المعيقلي", folder:"MaherAlMuaiqly128kbps", alt:"ar.mahermuaiqly"},
+  {name:"ماهر المعيقلي", folder:"Maher_AlMuaiqly_64kbps", alt:"ar.mahermuaiqly"},
   {name:"ياسر الدوسري", folder:"Yasser_Ad-Dussary_128kbps"},
   {name:"مشاري راشد العفاسي", folder:"Alafasy_128kbps", alt:"ar.alafasy"},
   {name:"عبد الرحمن السديس", folder:"Abdurrahmaan_As-Sudais_192kbps", alt:"ar.abdurrahmaansudais"},
   {name:"سعود الشريم", folder:"Saood_ash-Shuraym_128kbps", alt:"ar.saoodshuraym"},
   {name:"عبد الباسط عبد الصمد (مرتل)", folder:"Abdul_Basit_Murattal_192kbps", alt:"ar.abdulbasitmurattal"},
   {name:"محمود خليل الحصري", folder:"Husary_128kbps", alt:"ar.husary"},
-  {name:"محمد صديق المنشاوي (مرتل)", folder:"Minshawy_Murattal_128kbps", alt:"ar.minshawi"},
+  {name:"محمد صديق المنشاوي", folder:"Minshawy_Murattal_128kbps", alt:"ar.minshawi"},
   {name:"أحمد بن علي العجمي", folder:"Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net", alt:"ar.ahmedajamy"},
   {name:"أبو بكر الشاطري", folder:"Abu_Bakr_Ash-Shaatree_128kbps", alt:"ar.shaatree"},
   {name:"هاني الرفاعي", folder:"Hani_Rifai_192kbps", alt:"ar.hanirifai"},
@@ -847,11 +847,11 @@ const RECITERS = [
   {name:"فارس عباد", folder:"Fares_Abbad_64kbps"},
   {name:"سعد الغامدي", folder:"Ghamadi_40kbps"},
   {name:"خالد القحطاني", folder:"Khaalid_Abdullaah_al-Qahtaanee_192kbps"},
-  {name:"عبد الله عواد الجهني", folder:"Abdullaah_3awwaad_Al-Juhaynee_128kbps"},
+  {name:"عبد الله الجهني", folder:"Abdullaah_3awwaad_Al-Juhaynee_128kbps"},
   {name:"محسن القاسم", folder:"Muhsin_Al_Qasim_192kbps"},
   {name:"علي جابر", folder:"Ali_Jaber_64kbps"},
   {name:"ياسر سلامة", folder:"Yaser_Salamah_128kbps"},
-  {name:"محمد الطبلاوي", folder:"Mohammad_al_Tablaway_128kbps"},
+  {name:"محمد محمود الطبلاوي", folder:"Mohammad_al_Tablaway_128kbps"},
   {name:"أكرم العلاقمي", folder:"Akram_AlAlaqimy_128kbps"},
   {name:"علي الحذيفي", folder:"Hudhaify_128kbps"},
   {name:"صلاح بو خاطر", folder:"Salaah_AbdulRahmaan_Bukhatir_128kbps"},
@@ -865,6 +865,9 @@ const RECITERS = [
   {name:"عزيز عليلي", folder:"aziz_alili_128kbps"},
   {name:"سهل ياسين", folder:"Sahl_Yassin_128kbps"}
 ];
+/* ترتيب العرض كما في «المصحف الذكي» تماماً (ترتيب المصفوفة نفسها ثابت حتى لا تتغير الاختيارات المحفوظة) */
+const SM_ORDER = ["Maher_AlMuaiqly_64kbps","Alafasy_128kbps","Abdurrahmaan_As-Sudais_192kbps","Saood_ash-Shuraym_128kbps","Yasser_Ad-Dussary_128kbps","Fares_Abbad_64kbps","Nasser_Alqatami_128kbps","Abdullaah_3awwaad_Al-Juhaynee_128kbps","Khaalid_Abdullaah_al-Qahtaanee_192kbps","Abdul_Basit_Murattal_192kbps","Abdul_Basit_Mujawwad_128kbps","Husary_128kbps","Husary_128kbps_Mujawwad","Minshawy_Murattal_128kbps","Abu_Bakr_Ash-Shaatree_128kbps","Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net","Ghamadi_40kbps","Hani_Rifai_192kbps","Hudhaify_128kbps","Muhammad_Ayyoub_128kbps","Muhammad_Jibreel_128kbps","Abdullah_Basfar_192kbps","Ali_Jaber_64kbps","Akram_AlAlaqimy_128kbps","Muhsin_Al_Qasim_192kbps","Salaah_AbdulRahmaan_Bukhatir_128kbps","Mohammad_al_Tablaway_128kbps","Mustafa_Ismail_48kbps","Ibrahim_Akhdar_32kbps","Ayman_Sowaid_64kbps","Yaser_Salamah_128kbps","Abdullah_Matroud_128kbps","Mahmoud_Ali_Al_Banna_32kbps","aziz_alili_128kbps","Sahl_Yassin_128kbps"];
+const recOrder = () => RECITERS.map((r,i)=>i).sort((a,b)=> SM_ORDER.indexOf(RECITERS[a].folder) - SM_ORDER.indexOf(RECITERS[b].folder));
 const RTL_LANGS = ["ar","ur","fa","ps","ug","he","dv","ku","sd"];
 const ISTIADHA = "أَعُوذُ بِٱللَّهِ مِنَ ٱلشَّيۡطَٰنِ ٱلرَّجِيمِ";
 const BASMALA = "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ";
@@ -882,12 +885,12 @@ const DEFAULTS = {
   aspect:"16:9", position:"center",
   cBg:"#000000", cVerse:"#ffffff", cTafsir:"#ffe500", cTrans:"#e6e6e6",
   fVerse:"KFGQPC Hafs", fTafsir:"Tajawal", fTrans:"Poppins",
-  sVerse:88, sTafsir:42, sTrans:34, appIcon:1, bgScale:100, bgX:0, bgY:0, bgDim:35, quality:"1080", monitor:true
+  sVerse:88, sTafsir:42, sTrans:34, appIcon:1, bgScale:100, bgX:0, bgY:0, bgDim:35, quality:"1080", monitor:true, timedId:0, timedNoAyah:false, continuous:true
 };
 let S = Object.assign({}, DEFAULTS);
 try { const saved = JSON.parse(localStorage.getItem("qc_settings")||"null"); if (saved && typeof saved==="object") for (const k in DEFAULTS) if (k in saved && typeof saved[k]===typeof DEFAULTS[k]) S[k]=saved[k]; } catch(e){}
-try { if (localStorage.getItem("qc_v")!=="2"){ if (S.fVerse==="Amiri Quran") S.fVerse=HAFS; localStorage.setItem("qc_v","2"); } } catch(e){}
-try { if (localStorage.getItem("qc_v")!=="3"){ S.reciter=0; if (S.tafsir==="custom") S.tafsir="ar.muyassar"; localStorage.setItem("qc_v","3"); saveSettings(); } } catch(e){}
+try { if ((+localStorage.getItem("qc_v")||0) < 2){ if (S.fVerse==="Amiri Quran") S.fVerse=HAFS; localStorage.setItem("qc_v","2"); } } catch(e){}
+try { if ((+localStorage.getItem("qc_v")||0) < 3){ S.reciter=0; if (S.tafsir==="custom") S.tafsir="ar.muyassar"; localStorage.setItem("qc_v","3"); saveSettings(); } } catch(e){}
 function saveSettings(){ try{ localStorage.setItem("qc_settings", JSON.stringify(S)); }catch(e){} }
 
 /* ---------------- أدوات ---------------- */
@@ -1121,7 +1124,7 @@ function buildItemTexts(list){
 }
 function projectKey(){
   if (S.pubSource==="chroma") return JSON.stringify(["chroma", chromaFileKey]);
-  return JSON.stringify([S.continuous!==false,S.surah,S.from,S.to,S.audioMode,S.reciter,S.customFolder,S.addBasmala,S.tafsir,S.trans, S.audioMode==="upload"?[uploadName,segments.map(s=>[s.start,s.end])]:0]);
+  return JSON.stringify([S.timedId|0,S.continuous!==false,S.surah,S.from,S.to,S.audioMode,S.reciter,S.customFolder,S.addBasmala,S.tafsir,S.trans, S.audioMode==="upload"?[uploadName,segments.map(s=>[s.start,s.end])]:0]);
 }
 async function altAudioUrls(edition, surah){
   const key = "alt|"+edition+"|"+surah;
@@ -1257,8 +1260,9 @@ async function loadSpan(url, t0, t1){
   return {buffer, origin: mp3TimeAt(info, b0)};
 }
 /* يبني خطة الصوت والعناصر من التلاوة المتصلة؛ يرمي خطأً إن لم تتوفر، فيُرجع إلى «آية بآية» */
-async function buildContinuous(rec, txt, list){
-  const read = timedFor(rec, await loadTimedReads());
+async function buildContinuous(rec, txt, list, readId){
+  const reads = await loadTimedReads();
+  const read = readId!=null ? reads.find(r=>r.id===readId) : timedFor(rec, reads);
   if (!read) throw new Error("لا توجد تلاوة متصلة لهذا القارئ");
   const tm = await loadTiming(read, S.surah);
   const byA = new Map(tm.map(x=>[x.a, x]));
@@ -1387,9 +1391,12 @@ async function prepare(){
     if (!list.length) throw new Error("لا توجد آيات");
     let items=[], plan=[], total=0;
     let contNote = "";
-    if (S.audioMode==="reciter" && S.continuous!==false && !(S.customFolder||"").trim()){
-      try { const c = await buildContinuous(RECITERS[S.reciter]||RECITERS[0], txt, list); items = c.items; plan = c.plan; total = c.total; contNote = " — تلاوة متصلة"; }
-      catch(e){ console.warn("continuous:", e); items = []; plan = []; total = 0; contNote = " — آية بآية (التلاوة المتصلة غير متاحة لهذا الاختيار)"; }
+    const useTimed = !!S.timedId && !(S.customFolder||"").trim();
+    if (S.audioMode==="reciter" && (useTimed || S.continuous!==false) && !(S.customFolder||"").trim()){
+      try { const c = await buildContinuous(RECITERS[S.reciter]||RECITERS[0], txt, list, useTimed ? S.timedId : null); items = c.items; plan = c.plan; total = c.total; contNote = " — تلاوة متصلة"; }
+      catch(e){ console.warn("continuous:", e);
+        if (useTimed && S.timedNoAyah) throw new Error("تعذّر تحميل التلاوة المتصلة لهذا القارئ. تأكد من الإنترنت أو اختر قارئاً من قسم «آية بآية».");
+        items = []; plan = []; total = 0; contNote = " — آية بآية (التلاوة المتصلة غير متاحة لهذا الاختيار)"; }
     }
     if (S.audioMode==="reciter" && plan.length){ /* جاهزة من التلاوة المتصلة */ }
     else if (S.audioMode==="reciter"){
@@ -2347,7 +2354,7 @@ function renderFavs(){
     const t = document.createElement("div"); t.className="t";
     t.textContent = "⭐ سورة "+SURAH_NAMES[f.surah-1]+" ("+toAr(f.from)+"–"+toAr(f.to)+")"+(f.reciterName?" · "+f.reciterName:"");
     const open = document.createElement("button"); open.textContent="فتح";
-    open.onclick = ()=>{ Object.assign(S, {surah:f.surah, from:f.from, to:f.to}); if (typeof f.reciter==="number") S.reciter=f.reciter; saveSettings(); syncUI(); invalidate(); showTab("p-ayat"); setStatus("تم فتح المفضلة ✓","ok"); };
+    open.onclick = ()=>{ Object.assign(S, {surah:f.surah, from:f.from, to:f.to}); if (typeof f.reciter==="number"){ S.reciter=f.reciter; S.timedId = f.timedId|0; } saveSettings(); syncUI(); invalidate(); showTab("p-ayat"); setStatus("تم فتح المفضلة ✓","ok"); };
     const del = document.createElement("button"); del.textContent="حذف";
     del.onclick = ()=>{ const ff=loadFavs(); ff.splice(i,1); saveFavs(ff); renderFavs(); };
     row.append(t, open, del); box.appendChild(row);
@@ -2357,7 +2364,7 @@ $("addFav").addEventListener("click", ()=>{
   const favs = loadFavs();
   const rec = RECITERS[S.reciter];
   if (favs.some(f=>f.surah===S.surah&&f.from===S.from&&f.to===S.to&&f.reciter===S.reciter)){ setStatus("هذا الاختيار موجود في المفضلة.","ok"); return; }
-  favs.unshift({surah:S.surah, from:S.from, to:S.to, reciter:S.reciter, reciterName: S.audioMode==="reciter"&&rec?rec.name:""});
+  favs.unshift({surah:S.surah, from:S.from, to:S.to, reciter:S.reciter, timedId:S.timedId, reciterName: S.audioMode==="reciter"&&rec?rec.name:""});
   saveFavs(favs.slice(0,100)); renderFavs(); setStatus("أُضيف إلى المفضلة ⭐","ok");
 });
 
@@ -2669,7 +2676,49 @@ function syncSeg(id, val){ $(id).querySelectorAll("button").forEach(x=>x.classLi
 function fillSurahs(){
   const sel = $("surah");
   sel.innerHTML = SURAH_NAMES.map((n,i)=>'<option value="'+(i+1)+'">'+toAr(i+1)+". "+n+" ("+toAr(AYAH_COUNTS[i])+" آية)</option>").join("");
-  $("reciter").innerHTML = RECITERS.map((r,i)=>'<option value="'+i+'">'+r.name+'</option>').join("");
+  fillReciters();
+}
+/* قائمة القرّاء كما في «المصحف الذكي»: التلاوات المتصلة (MP3Quran) أولاً ثم «آية بآية» (EveryAyah) */
+function fillReciters(){
+  const esc = t => String(t).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  let h = "";
+  if (timedReads && timedReads.length)
+    h += '<optgroup label="تلاوة متصلة (سورة كاملة بتوقيت الآيات)">' + timedReads.map(r=>'<option value="t:'+r.id+'">'+esc(r.name)+(r.rewaya?" — "+esc(r.rewaya):"")+'</option>').join("") + '</optgroup>';
+  h += '<optgroup label="آية بآية">' + recOrder().map(i=>'<option value="'+i+'">'+esc(RECITERS[i].name)+'</option>').join("") + '</optgroup>';
+  $("reciter").innerHTML = h;
+  syncReciterSel();
+}
+function syncReciterSel(){
+  const timedOk = !!S.timedId && timedReads && timedReads.some(r=>r.id===S.timedId);
+  $("reciter").value = timedOk ? "t:"+S.timedId : String(S.reciter);
+  const sw = $("continuous").closest(".switch"); if (sw) sw.style.display = !!S.timedId ? "none" : "";
+}
+/* القارئ «آية بآية» المقابل لتلاوة متصلة (للرجوع إليه وللتنزيل بلا إنترنت) */
+function ayahRecFor(read){
+  const n = normName(read.name), muj = (read.name+" "+read.rewaya).includes("مجود");
+  for (const i of recOrder()){
+    const r = RECITERS[i]; if (r.name.includes("مجود") !== muj) continue;
+    const parts = r.name.split("(")[0].trim().split(/\s+/).map(normName).filter(w=>w.length>2);
+    if (parts.length && parts.every(p=>n.includes(p))) return i;
+  }
+  return -1;
+}
+function pickTimed(id){
+  const read = (timedReads||[]).find(r=>r.id===id); if (!read) return;
+  S.timedId = id; const i = ayahRecFor(read);
+  S.timedNoAyah = i < 0; if (i >= 0) S.reciter = i;
+}
+/* تُجلب قائمة التلاوات المتصلة عند الفتح؛ وأول مرة يُختار ماهر المعيقلي المتصل كما في «المصحف الذكي» */
+function initTimedReciters(){
+  loadTimedReads().then(reads=>{
+    let first = false;
+    try { first = localStorage.getItem("qc_recsel")!=="1"; localStorage.setItem("qc_recsel","1"); } catch(e){}
+    if (first && !S.timedId && S.reciter===0){
+      const m = reads.find(r=>r.name.includes("المعيقلي") && r.rewaya.includes("حفص")) || reads.find(r=>r.name.includes("المعيقلي"));
+      if (m){ pickTimed(m.id); saveSettings(); invalidate(); }
+    }
+    fillReciters();
+  }).catch(e=>console.warn("timed reads:", e));
 }
 function syncUI(){
   $("surah").value = S.surah;
@@ -2677,7 +2726,7 @@ function syncUI(){
   S.from = clamp(S.from|0,1,n); S.to = clamp(S.to|0,S.from,n);
   $("fromAyah").max = n; $("toAyah").max = n;
   $("fromAyah").value = S.from; $("toAyah").value = S.to;
-  $("reciter").value = S.reciter; $("customFolder").value = S.customFolder;
+  syncReciterSel(); $("customFolder").value = S.customFolder;
   $("continuous").checked = S.continuous!==false;
   $("addBasmala").checked = S.addBasmala; $("hasIstiadha").checked = S.hasIstiadha; $("hasBasmala").checked = S.hasBasmala;
   syncSeg("audioMode", S.audioMode);
@@ -2704,7 +2753,9 @@ $("surah").addEventListener("change", ()=>{ S.surah = +$("surah").value; S.from 
 $("fromAyah").addEventListener("change", ()=>{ const n=AYAH_COUNTS[S.surah-1]; S.from = clamp(parseInt($("fromAyah").value)||1,1,n); if (S.to<S.from) S.to=S.from; saveSettings(); syncUI(); onRangeChange(); });
 $("toAyah").addEventListener("change", ()=>{ const n=AYAH_COUNTS[S.surah-1]; S.to = clamp(parseInt($("toAyah").value)||S.from,1,n); if (S.to<S.from) S.from=S.to; saveSettings(); syncUI(); onRangeChange(); });
 bindSeg("audioMode","audioMode", ()=>{ syncUI(); invalidate(); tlRefresh(); });
-$("reciter").addEventListener("change", ()=>{ S.reciter = +$("reciter").value; saveSettings(); invalidate(); });
+$("reciter").addEventListener("change", ()=>{ const v = $("reciter").value;
+  if (v.startsWith("t:")) pickTimed(+v.slice(2)); else { S.reciter = +v; S.timedId = 0; S.timedNoAyah = false; }
+  saveSettings(); syncReciterSel(); invalidate(); });
 /* المقاطع: تصنيف، إعجاب محلي، مشاركة، إبلاغ، وتشغيل المقطع الظاهر فقط */
 function filterReels(v){
   let shown = 0;
@@ -2929,10 +2980,10 @@ $("offClear").addEventListener("click", async ()=>{
   try{ await caches.delete(OFF); }catch(e){}
   offSetStatus("حُذفت التنزيلات."); refreshOffInfo();
 });
-fillSurahs(); syncUI(); renderStill();
+fillSurahs(); syncUI(); renderStill(); initTimedReciters();
 $("offSurah").innerHTML = '<option value="all">كل السور</option>' + $("surah").innerHTML;
 $("offSurah").value = String(S.surah || 1);
-$("offReciter").innerHTML = RECITERS.map((r,i)=>'<option value="'+i+'">'+r.name+'</option>').join("");
+$("offReciter").innerHTML = recOrder().map(i=>'<option value="'+i+'">'+RECITERS[i].name+'</option>').join("");
 $("offReciter").value = String(S.reciter || 0);
 refreshOffInfo();
 restoreUpload().catch(()=>setStatus("تعذّر استعادة الصوت المحفوظ، ارفعه من جديد.", "err"));
