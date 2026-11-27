@@ -101,7 +101,10 @@ video.result{width:100%;border-radius:12px;margin-top:10px;background:#000}
 .overlay .big{font-family:"KFGQPC Hafs","Amiri Quran",serif;font-size:26px;line-height:2;margin:14px 0;max-width:640px}
 .overlay .tapBtn{width:min(80vw,320px);height:120px;border-radius:20px;border:none;background:var(--accent);color:#000;font:inherit;font-size:22px;font-weight:800;cursor:pointer}
 .switch{display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:14px}
-.switch input{width:22px;height:22px;accent-color:var(--accent)}
+.switch input{appearance:none;-webkit-appearance:none;flex:none;width:46px;height:28px;border-radius:999px;background:#3a352c;border:1px solid var(--line);position:relative;cursor:pointer;transition:background .2s;margin:0}
+.switch input::after{content:"";position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;background:#e9e3d6;transition:transform .2s}
+.switch input:checked{background:var(--accent);border-color:var(--accent)}
+.switch input:checked::after{transform:translateX(-18px)}
 .layout{display:block}
 #preview{touch-action:none;cursor:default}
 html,body{touch-action:manipulation}
@@ -173,7 +176,7 @@ select:focus,input:focus,textarea:focus{outline:none;border-color:var(--accent)}
 .preset.on{border-color:var(--copper)}
 input[type=range]{accent-color:var(--accent)}
 .switch{padding:11px 0;font-size:15px}
-.switch input{width:24px;height:24px;accent-color:var(--accent)}
+
 .progress{height:12px}
 .segRow button,.favItem button{border-radius:999px;padding:7px 14px}
 .segRow input{border-radius:12px}
@@ -391,11 +394,7 @@ details.grp>.grpBody>.card{margin:0 0 10px}
         <div class="switch"><span>إضافة البسملة في البداية</span><input type="checkbox" id="addBasmala"></div>
         <div class="switch"><span>تلاوة متصلة بلا انقطاع بين الآيات</span><input type="checkbox" id="continuous"></div>
         <div class="hint" style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0">💡 التلاوة المتصلة تؤخذ من تسجيل السورة كاملاً، فتخرج طبيعية كأنها تسجيل واحد. إن لم تتوفر للقارئ المختار استُعملت تلاوته آيةً آية تلقائياً.</div>
-        <div class="card" style="margin:8px 0;padding:10px">
-          <div class="hint">التنزيل للاستماع بلا إنترنت (قريباً):</div>
-          <button class="btn" id="dlReciter" disabled>تنزيل هذا القارئ للسورة المختارة</button>
-          <button class="btn" id="dlMushaf" disabled>تنزيل المصحف كاملاً بصوت هذا القارئ</button>
-        </div>
+        <button class="btn small" id="dlReciter" style="width:100%;margin:6px 0">تنزيل السورة للعمل بلا إنترنت ‹</button>
         <details>
           <summary class="hint" style="cursor:pointer">قارئ غير موجود في القائمة؟</summary>
           <label class="f">اسم مجلد القارئ في موقع everyayah.com (اختياري)</label>
@@ -2819,6 +2818,11 @@ window.__profReady = true;
 paintProfile();
 $("customFolder").addEventListener("change", ()=>{ S.customFolder = $("customFolder").value.trim(); saveSettings(); invalidate(); });
 $("addBasmala").addEventListener("change", ()=>{ S.addBasmala = $("addBasmala").checked; saveSettings(); invalidate(); });
+$("dlReciter").addEventListener("click", ()=>{
+  showTab("p-settings");
+  try{ $("offSurah").value = String(S.surah); $("offReciter").value = String(S.reciter||0); $("offSurah").dispatchEvent(new Event("change")); }catch(e){}
+  const el = $("offSurah"); if (el && el.scrollIntoView) el.scrollIntoView({block:"center", behavior:"smooth"});
+});
 $("continuous").addEventListener("change", ()=>{ S.continuous = $("continuous").checked; saveSettings(); invalidate(); });
 $("hasIstiadha").addEventListener("change", ()=>{ S.hasIstiadha = $("hasIstiadha").checked; saveSettings(); onRangeChange(); });
 $("hasBasmala").addEventListener("change", ()=>{ S.hasBasmala = $("hasBasmala").checked; saveSettings(); onRangeChange(); });
